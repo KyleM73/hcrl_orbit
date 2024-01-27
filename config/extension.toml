@@ -7,7 +7,7 @@ version = "0.0.1"
 title = "HCRL ORBIT Environments"
 description="Extension containing suite of HCRL environments for robot learning."
 readme  = "docs/README.md"
-repository = "https://github.com/NVIDIA-Omniverse/Orbit"
+repository = "https://github.com/KyleM73/orbit"
 category = "robotics"
 keywords = ["robotics", "rl", "il", "learning"]
 
