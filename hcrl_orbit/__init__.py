@@ -1,47 +1,26 @@
-import gymnasium as gym
+"""Package containing task implementations for various robotic environments."""
 
-from hcrl_orbit.locomotion.velocity.config.draco import agents, flat_env_cfg, rough_env_cfg
+import os
+import toml
+
+# Conveniences to other module directories via relative paths
+HCRL_ORBIT_EXT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+"""Path to the extension source directory."""
+
+HCRL_ORBIT_METADATA = toml.load(os.path.join(HCRL_ORBIT_EXT_DIR, "config", "extension.toml"))
+"""Extension metadata dictionary parsed from the extension.toml file."""
+
+# Configure the module-level variables
+__version__ = HCRL_ORBIT_METADATA["package"]["version"]
 
 ##
 # Register Gym environments.
 ##
 
-gym.register(
-    id="Isaac-HCRL-Velocity-Draco-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": flat_env_cfg.DracoFlatEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.DracoFlatPPORunnerCfg,
-        },
-)
+from omni.isaac.orbit_tasks.utils import import_packages
 
-gym.register(
-    id="Isaac-HCRL-Velocity-Draco-Play-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": flat_env_cfg.DracoFlatEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.DracoFlatPPORunnerCfg,
-        },
-)
-
-gym.register(
-    id="Isaac-HCRL-Velocity-Rough-Draco-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": rough_env_cfg.DracoRoughEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.DracoRoughPPORunnerCfg,
-        },
-)
-
-gym.register(
-    id="Isaac-HCRL-Velocity-Rough-Draco-Play-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": rough_env_cfg.DracoRoughEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.DracoRoughPPORunnerCfg,
-        },
-)
+# The blacklist is used to prevent importing configs from sub-packages
+#_BLACKLIST_PKGS = ["utils"]
+_BLACKLIST_PKGS = []
+# Import all configs in this package
+import_packages(__name__, _BLACKLIST_PKGS)

@@ -19,6 +19,7 @@ from omni.isaac.orbit.terrains import TerrainImporterCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
+#import omni.isaac.orbit.envs.mdp as mdp
 import hcrl_orbit.locomotion.velocity.mdp as mdp
 
 ##
