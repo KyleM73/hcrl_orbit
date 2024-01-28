@@ -1,8 +1,3 @@
-# Copyright (c) 2022-2024, The ORBIT Project Developers.
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
 from __future__ import annotations
 
 import math
@@ -63,14 +58,14 @@ class MySceneCfg(InteractiveSceneCfg):
     # robots
     robot: ArticulationCfg = MISSING
     # sensors
-    height_scanner = RayCasterCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-        attach_yaw_only=True,
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
-        debug_vis=False,
-        mesh_prim_paths=["/World/ground"],
-    )
+    #height_scanner = RayCasterCfg(
+    #    prim_path="{ENV_REGEX_NS}/Robot/base",
+    #    offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
+    #    attach_yaw_only=True,
+    #    pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
+    #    debug_vis=False,
+    #    mesh_prim_paths=["/World/ground"],
+    #)
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
     # lights
     light = AssetBaseCfg(
@@ -131,12 +126,12 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
-        height_scan = ObsTerm(
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-            noise=Unoise(n_min=-0.1, n_max=0.1),
-            clip=(-1.0, 1.0),
-        )
+        #height_scan = ObsTerm(
+        #    func=mdp.height_scan,
+        #    params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #    noise=Unoise(n_min=-0.1, n_max=0.1),
+        #    clip=(-1.0, 1.0),
+        #)
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -197,11 +192,11 @@ class RandomizationCfg:
     )
 
     reset_robot_joints = RandTerm(
-        func=mdp.reset_joints_by_scale,
+        func=mdp.reset_in_range,
         mode="reset",
         params={
-            "position_range": (0.5, 1.5),
-            "velocity_range": (0.0, 0.0),
+            "position_range": (-0.5, 0.5),
+            "velocity_range": (-0.1, 0.1),
         },
     )
 
@@ -232,22 +227,22 @@ class RewardsCfg:
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
     feet_air_time = RewTerm(
-        func=mdp.feet_air_time,
+        func=mdp.feet_air_time_positive_biped,
         weight=0.5,
         params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*ankle_ie_link"),
             "command_name": "base_velocity",
             "threshold": 0.5,
         },
     )
-    undesired_contacts = RewTerm(
-        func=mdp.undesired_contacts,
-        weight=-1.0,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*THIGH"), "threshold": 1.0},
-    )
+    #undesired_contacts = RewTerm(
+    #    func=mdp.undesired_contacts,
+    #    weight=-1.0,
+    #    params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*knee_fe_link"), "threshold": 1.0},
+    #)
     # -- optional penalties
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    #flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
+    #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
 
 
 @configclass
@@ -257,7 +252,19 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces", 
+                body_names=[
+                "torso_link",
+                "neck_pitch.*", 
+                "[lr]_shoulder_ie.*", 
+                "[lr]_wrist_pitch.*",
+                "[lr]_knee_fe.*",
+                "[lr]_hip_fe.*"]
+                ),
+            "threshold": 1.0,
+            },
     )
 
 
@@ -274,7 +281,7 @@ class CurriculumCfg:
 
 
 @configclass
-class LocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
+class BipedLocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
 
     # Scene settings
@@ -292,10 +299,10 @@ class LocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 16
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.00125
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
