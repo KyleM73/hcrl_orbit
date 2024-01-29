@@ -10,7 +10,7 @@ from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class DracoRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 1500
+    max_iterations = 30000
     save_interval = 50
     experiment_name = "draco_rough"
     empirical_normalization = False
@@ -41,7 +41,7 @@ class DracoFlatPPORunnerCfg(DracoRoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 300
+        self.max_iterations = 3000
         self.experiment_name = "draco_flat"
         self.policy.actor_hidden_dims = [128, 128, 128]
         self.policy.critic_hidden_dims = [128, 128, 128]

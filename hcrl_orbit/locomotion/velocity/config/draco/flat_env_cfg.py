@@ -10,8 +10,8 @@ class DracoFlatEnvCfg(DracoRoughEnvCfg):
         super().__post_init__()
 
         # override rewards
-        self.rewards.flat_orientation_l2.weight = -2.5
-        self.rewards.feet_air_time.weight = 1.0
+        #self.rewards.flat_orientation_l2.weight = -2.5
+        #self.rewards.feet_air_time.weight = 1.0
 
         # change terrain to flat
         self.scene.terrain.terrain_type = "plane"
@@ -21,6 +21,8 @@ class DracoFlatEnvCfg(DracoRoughEnvCfg):
         self.observations.policy.height_scan = None
         # no terrain curriculum
         self.curriculum.terrain_levels = None
+        # reduce action scale
+        self.actions.joint_pos.scale = 0.1
 
 
 class DracoFlatEnvCfg_PLAY(DracoFlatEnvCfg):
@@ -29,7 +31,7 @@ class DracoFlatEnvCfg_PLAY(DracoFlatEnvCfg):
         super().__post_init__()
 
         # make a smaller scene for play
-        self.scene.num_envs = 50
+        self.scene.num_envs = 1
         self.scene.env_spacing = 2.5
         # disable randomization for play
         self.observations.policy.enable_corruption = False

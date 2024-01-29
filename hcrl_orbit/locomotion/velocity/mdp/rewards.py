@@ -52,3 +52,9 @@ def feet_air_time_positive_biped(env, command_name: str, sensor_cfg: SceneEntity
     # no reward for zero command
     reward *= torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
     return reward
+
+def living(env: RLTaskEnv):
+    return torch.ones(env.scene.num_envs, device=env.scene.device)
+
+def height(env: RLTaskEnv):
+    return env.scene["robot"].data.root_pos_w[:, 2]

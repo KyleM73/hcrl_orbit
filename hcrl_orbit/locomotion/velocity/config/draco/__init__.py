@@ -1,12 +1,11 @@
 import gymnasium as gym
 
 #from hcrl_orbit.locomotion.velocity.config.draco import agents, flat_env_cfg, rough_env_cfg
-#from . import agents, flat_env_cfg, rough_env_cfg
+from . import agents, flat_env_cfg, rough_env_cfg
 
 ##
 # Register Gym environments.
 ##
-"""
 
 gym.register(
     id="Isaac-HCRL-Velocity-Draco-v0",
@@ -47,4 +46,3 @@ gym.register(
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.DracoRoughPPORunnerCfg,
         },
 )
-"""

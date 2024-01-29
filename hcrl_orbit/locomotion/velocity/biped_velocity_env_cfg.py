@@ -59,6 +59,7 @@ class MySceneCfg(InteractiveSceneCfg):
     # robots
     robot: ArticulationCfg = MISSING
     # sensors
+    height_scanner = None
     #height_scanner = RayCasterCfg(
     #    prim_path="{ENV_REGEX_NS}/Robot/base",
     #    offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
@@ -96,7 +97,7 @@ class CommandsCfg:
         heading_command=True,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+            lin_vel_x=(-0.5, 0.5), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-0.0, 0.0), heading=(-0*math.pi, 0*math.pi)
         ),
     )
 
@@ -105,7 +106,7 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
+    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.1, use_default_offset=True)
 
 
 @configclass
@@ -162,7 +163,7 @@ class RandomizationCfg:
     add_base_mass = RandTerm(
         func=mdp.add_body_mass,
         mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="base"), "mass_range": (-5.0, 5.0)},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="torso_link"), "mass_range": (-5.0, 5.0)},
     )
 
     # reset
@@ -170,7 +171,7 @@ class RandomizationCfg:
         func=mdp.apply_external_force_torque,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="base"),
+            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
             "force_range": (0.0, 0.0),
             "torque_range": (-0.0, 0.0),
         },
@@ -196,18 +197,19 @@ class RandomizationCfg:
         func=mdp.reset_in_range,
         mode="reset",
         params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
             "position_range": (-0.5, 0.5),
             "velocity_range": (-0.1, 0.1),
         },
     )
 
     # interval
-    push_robot = RandTerm(
-        func=mdp.push_by_setting_velocity,
-        mode="interval",
-        interval_range_s=(10.0, 15.0),
-        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    )
+    #push_robot = RandTerm(
+    #    func=mdp.push_by_setting_velocity,
+    #    mode="interval",
+    #    interval_range_s=(10.0, 15.0),
+    #    params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+    #)
 
 
 @configclass
@@ -215,27 +217,28 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # -- task
+    height = RewTerm(func=mdp.height, weight=15.0)
     track_lin_vel_xy_exp = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_lin_vel_xy_exp, weight=2.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
     track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
     # -- penalties
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
+    #lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
+    #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    feet_air_time = RewTerm(
-        func=mdp.feet_air_time_positive_biped,
-        weight=0.5,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*ankle_ie_link"),
-            "command_name": "base_velocity",
-            "threshold": 0.5,
-        },
-    )
+    #feet_air_time = RewTerm(
+    #    func=mdp.feet_air_time_positive_biped,
+    #    weight=0.5,
+    #    params={
+    #        "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*ankle_ie_link"),
+    #        "command_name": "base_velocity",
+    #        "threshold": 0.5,
+    #    },
+    #)
     #undesired_contacts = RewTerm(
     #    func=mdp.undesired_contacts,
     #    weight=-1.0,

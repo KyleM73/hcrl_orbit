@@ -4,7 +4,7 @@ import os
 import toml
 
 # Conveniences to other module directories via relative paths
-HCRL_ORBIT_EXT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+HCRL_ORBIT_EXT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"../"))
 """Path to the extension source directory."""
 
 HCRL_ORBIT_METADATA = toml.load(os.path.join(HCRL_ORBIT_EXT_DIR, "config", "extension.toml"))

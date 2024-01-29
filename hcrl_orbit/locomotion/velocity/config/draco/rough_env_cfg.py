@@ -22,16 +22,16 @@ class DracoRoughEnvCfg(BipedLocomotionVelocityRoughEnvCfg):
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
         # reduce action scale
-        self.actions.joint_pos.scale = 0.25
+        #self.actions.joint_pos.scale = 0.0
 
         # randomization
         self.randomization.push_robot = None
-        self.randomization.add_base_mass.params["mass_range"] = (-1.0, 3.0)
+        self.randomization.add_base_mass.params["mass_range"] = (-0.0, 0.0)
         self.randomization.add_base_mass.params["asset_cfg"].body_names = "torso_link"
         self.randomization.base_external_force_torque.params["asset_cfg"].body_names = "torso_link"
-        self.randomization.reset_in_range.params["position_range"] = (-0.5, 0.5)
+        self.randomization.reset_robot_joints.params["position_range"] = (-0.0, 0.0)
         self.randomization.reset_base.params = {
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0, 0), "pitch": (0.25, 0.25)}, #0.27
             "velocity_range": {
                 "x": (0.0, 0.0),
                 "y": (0.0, 0.0),
@@ -41,15 +41,16 @@ class DracoRoughEnvCfg(BipedLocomotionVelocityRoughEnvCfg):
                 "yaw": (0.0, 0.0),
             },
         }
+        #self.randomization.push_robot.params["velocity_range"] = {"x": (-0.0, 0.0), "y": (-0.0, 0.0)}
 
         # rewards
-        self.rewards.feet_air_time.params["sensor_cfg"].body_names = ".*_ankle_ie_link"
-        self.rewards.feet_air_time.weight = 0.01
+        #self.rewards.feet_air_time.params["sensor_cfg"].body_names = ".*_ankle_ie_link"
+        #self.rewards.feet_air_time.weight = 0.01
         #self.rewards.undesired_contacts = None
-        self.rewards.dof_torques_l2.weight = -0.0002
-        self.rewards.track_lin_vel_xy_exp.weight = 1.5
-        self.rewards.track_ang_vel_z_exp.weight = 0.75
-        self.rewards.dof_acc_l2.weight = -2.5e-7
+        #self.rewards.dof_torques_l2.weight = -0.0002
+        #self.rewards.track_lin_vel_xy_exp.weight = 1.5
+        #self.rewards.track_ang_vel_z_exp.weight = 0.75
+        #self.rewards.dof_acc_l2.weight = -2.5e-7
 
         # terminations
         #self.terminations.base_contact.params["sensor_cfg"].body_names = "torso_link"
