@@ -6,3 +6,4 @@
 """Locomotion environments for hcrl robots."""
 
 from .velocity import *  # noqa
+from .navigation import * #noqa

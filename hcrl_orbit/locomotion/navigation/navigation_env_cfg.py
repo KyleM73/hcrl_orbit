@@ -1,3 +1,8 @@
+# Copyright (c) 2022-2024, The ORBIT Project Developers.
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 import math
@@ -19,8 +24,7 @@ from omni.isaac.orbit.terrains import TerrainImporterCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-#import omni.isaac.orbit.envs.mdp as mdp
-import hcrl_orbit.locomotion.velocity.mdp as mdp
+import hcrl_orbit.locomotion.navigation.mdp as mdp
 
 ##
 # Pre-defined configs
@@ -40,9 +44,7 @@ class MySceneCfg(InteractiveSceneCfg):
     # ground terrain
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
-        terrain_type="generator",
-        terrain_generator=ROUGH_TERRAINS_CFG,
-        max_init_terrain_level=5,
+        terrain_type="plane",
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
@@ -50,25 +52,12 @@ class MySceneCfg(InteractiveSceneCfg):
             static_friction=1.0,
             dynamic_friction=1.0,
         ),
-        visual_material=sim_utils.MdlFileCfg(
-            mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
-            project_uvw=True,
-        ),
         debug_vis=False,
     )
     # robots
     robot: ArticulationCfg = MISSING
     # sensors
-    height_scanner = None
-    #height_scanner = RayCasterCfg(
-    #    prim_path="{ENV_REGEX_NS}/Robot/base",
-    #    offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-    #    attach_yaw_only=True,
-    #    pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
-    #    debug_vis=False,
-    #    mesh_prim_paths=["/World/ground"],
-    #)
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/dummy_yaw_link", history_length=3, track_air_time=False)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -79,26 +68,20 @@ class MySceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.DomeLightCfg(color=(0.13, 0.13, 0.13), intensity=1000.0),
     )
 
-
 ##
 # MDP settings
 ##
-
 
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
 
-    base_velocity = mdp.UniformVelocityCommandCfg(
+    base_pose = mdp.TerrainBasedPositionCommandCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0),
         rel_standing_envs=0.02,
-        rel_heading_envs=1.0,
-        heading_command=True,
+        simple_heading=True,
         debug_vis=True,
-        ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.5, 0.5), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-0.0, 0.0), heading=(-0*math.pi, 0*math.pi)
-        ),
     )
 
 
@@ -106,7 +89,14 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.1, use_default_offset=True)
+    se2_pose = mdp.NonHolonomicActionCfg(
+        asset_name="robot",
+        body_name="base_link",
+        x_joint_name=["dummy_x_joint"],
+        y_joint_name=["dummy_y_joint"],
+        yaw_joint_name=["dummy_yaw_joint"],
+        scale=(1.0, 1.0), offset=(0.0,0.0) # TODO this may be too high
+        )
 
 
 @configclass
@@ -118,22 +108,11 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-        projected_gravity = ObsTerm(
-            func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
-        )
-        velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
+        pose_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "se2_pose"})
+        joint_pos = ObsTerm(func=mdp.joint_pos_norm, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
-        #height_scan = ObsTerm(
-        #    func=mdp.height_scan,
-        #    params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-        #    noise=Unoise(n_min=-0.1, n_max=0.1),
-        #    clip=(-1.0, 1.0),
-        #)
+        contact_wrench = ObsTerm(func=mdp.body_incoming_wrench, noise=Unoise(n_min=-0.01, n_max=0.01))
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -163,7 +142,7 @@ class RandomizationCfg:
     add_base_mass = RandTerm(
         func=mdp.add_body_mass,
         mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="torso_link"), "mass_range": (-5.0, 5.0)},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="base"), "mass_range": (-5.0, 5.0)},
     )
 
     # reset
@@ -171,7 +150,7 @@ class RandomizationCfg:
         func=mdp.apply_external_force_torque,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
+            "asset_cfg": SceneEntityCfg("robot", body_names="base"),
             "force_range": (0.0, 0.0),
             "torque_range": (-0.0, 0.0),
         },
@@ -193,23 +172,13 @@ class RandomizationCfg:
         },
     )
 
-    reset_robot_joints = RandTerm(
-        func=mdp.reset_in_range,
-        mode="reset",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "position_range": (-0.5, 0.5),
-            "velocity_range": (-0.1, 0.1),
-        },
-    )
-
     # interval
-    #push_robot = RandTerm(
-    #    func=mdp.push_by_setting_velocity,
-    #    mode="interval",
-    #    interval_range_s=(10.0, 15.0),
-    #    params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    #)
+    push_robot = RandTerm(
+        func=mdp.push_by_setting_velocity,
+        mode="interval",
+        interval_range_s=(10.0, 15.0),
+        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+    )
 
 
 @configclass
@@ -217,36 +186,14 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # -- task
-    height = RewTerm(func=mdp.height, weight=10.0, params={"threshold": 0.8})
-    track_lin_vel_xy_exp = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=10.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
-    )
-    #track_ang_vel_z_exp = RewTerm(
-    #    func=mdp.track_ang_vel_z_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
-    #)
+    # TODO pose tracking task reward
     # -- penalties
-    #lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
-    #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
+    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    feet_air_time = RewTerm(
-        func=mdp.feet_air_time_positive_biped,
-        weight=2.0,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*ankle_ie_link"),
-            "command_name": "base_velocity",
-            "threshold": 0.5,
-        },
-    )
-    #undesired_contacts = RewTerm(
-    #    func=mdp.undesired_contacts,
-    #    weight=-1.0,
-    #    params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*knee_fe_link"), "threshold": 1.0},
-    #)
     # -- optional penalties
-    #flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
-    #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
 
 
 @configclass
@@ -254,29 +201,15 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg(
-                "contact_forces", 
-                body_names=[
-                "torso_link",
-                "neck_pitch.*", 
-                "[lr]_shoulder_ie.*", 
-                "[lr]_wrist_pitch.*",
-                "[lr]_knee_fe.*",
-                "[lr]_hip_fe.*"]
-                ),
-            "threshold": 1.0,
-            },
-    )
+    # TODO bad orientation
 
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
-    terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
+    #terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
+    pass
 
 
 ##
@@ -285,7 +218,7 @@ class CurriculumCfg:
 
 
 @configclass
-class BipedLocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
+class LocomotionNavigationFlatEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
 
     # Scene settings
@@ -303,24 +236,13 @@ class BipedLocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 16
+        self.decimation = 4
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.00125
+        self.sim.dt = 0.005
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
-        if self.scene.height_scanner is not None:
-            self.scene.height_scanner.update_period = self.decimation * self.sim.dt
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
-
-        # check if terrain levels curriculum is enabled - if so, enable curriculum for terrain generator
-        # this generates terrains with increasing difficulty and is useful for training
-        if getattr(self.curriculum, "terrain_levels", None) is not None:
-            if self.scene.terrain.terrain_generator is not None:
-                self.scene.terrain.terrain_generator.curriculum = True
-        else:
-            if self.scene.terrain.terrain_generator is not None:
-                self.scene.terrain.terrain_generator.curriculum = False
