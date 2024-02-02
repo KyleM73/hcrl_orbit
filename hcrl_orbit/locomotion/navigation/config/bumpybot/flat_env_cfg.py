@@ -20,22 +20,22 @@ class BumpybotFlatEnvCfg(LocomotionNavigationFlatEnvCfg):
         #self.actions.joint_pos.scale = 0.0
 
         # randomization
-        self.randomization.push_robot = None
-        self.randomization.add_base_mass.params["mass_range"] = (-0.0, 0.0)
-        self.randomization.add_base_mass.params["asset_cfg"].body_names = "base_link"
-        self.randomization.base_external_force_torque.params["asset_cfg"].body_names = "base_link"
-        self.randomization.reset_robot_joints.params["position_range"] = (-0.0, 0.0)
-        self.randomization.reset_base.params = {
-            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0, 0), "pitch": (0.0, 0.0)},
-            "velocity_range": {
-                "x": (0.0, 0.0),
-                "y": (0.0, 0.0),
-                "z": (0.0, 0.0),
-                "roll": (0.0, 0.0),
-                "pitch": (0.0, 0.0),
-                "yaw": (0.0, 0.0),
-            },
-        }
+        #self.randomization.push_robot = None
+        #self.randomization.add_base_mass.params["mass_range"] = (-0.0, 0.0)
+        #self.randomization.add_base_mass.params["asset_cfg"].body_names = "base_link"
+        #self.randomization.base_external_force_torque.params["asset_cfg"].body_names = "base_link"
+        #self.randomization.reset_robot_joints.params["position_range"] = (-0.0, 0.0)
+        #self.randomization.reset_base.params = {
+        #    "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0, 0), "pitch": (0.0, 0.0)},
+        #    "velocity_range": {
+        #        "x": (0.0, 0.0),
+        #        "y": (0.0, 0.0),
+        #        "z": (0.0, 0.0),
+        #        "roll": (0.0, 0.0),
+        #        "pitch": (0.0, 0.0),
+        #        "yaw": (0.0, 0.0),
+        #    },
+        #}
         #self.randomization.push_robot.params["velocity_range"] = {"x": (-0.0, 0.0), "y": (-0.0, 0.0)}
 
         # rewards
@@ -66,5 +66,7 @@ class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):
         # disable randomization for play
         self.observations.policy.enable_corruption = False
         # remove random pushing
-        self.randomization.base_external_force_torque = None
-        self.randomization.push_robot = None
+        #self.randomization.base_external_force_torque = None
+        #self.randomization.push_robot = None
+        # viewer settings
+        #self.viewer.eye = (8.0, 0.0, 5.0)
