@@ -28,9 +28,10 @@ def heading_tracking_exp(env: RLTaskEnv, command_name: str, body_name: str, std:
     asset: Articulation = env.scene["robot"]
     body_id = asset.find_bodies(body_name)[0][0]
     target_heading = env.command_manager.get_command(command_name)[:, 2] # heading command
-    _, _, heading = math_utils.euler_xyz_from_quat(env.scene["robot"].data.body_quat_w) # heading
+    _, _, heading = math_utils.euler_xyz_from_quat(env.scene["robot"].data.body_quat_w[:, body_id, :]) # heading
     # TODO wrap to pi
-    heading_error = torch.linalg.norm(heading-target_heading, dim=-1)
+    #heading_error = torch.linalg.norm(heading-target_heading, dim=-1)
+    heading_error = torch.abs(math_utils.wrap_to_pi(target_heading - heading))
     return torch.exp(-heading_error/std**2)
 
 """
