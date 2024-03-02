@@ -12,6 +12,7 @@ class BumpybotFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     max_iterations = 5000
     save_interval = 50
     experiment_name = "bumpybot_flat"
+    run_name = "bumpybot"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,

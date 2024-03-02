@@ -75,15 +75,15 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-    # TODO write new command generator with max distance constraints (eg in -10,10)
-    base_pose = mdp.BoxPoseCommandCfg(
+    se2_pose = mdp.TrajectoryCommandCfg(
         asset_name="robot",
         body_name="dummy_revolute_yaw_link",
-        resampling_time_range=(3.0, 5.0),
+        resampling_time_range=(10.0, 15.0),
         simple_heading=True,
-        normalized=True,
-        ranges=mdp.BoxPoseCommandCfg.Ranges(
-            pos_x=(-20.0, 20.0), pos_y=(-20.0, 20.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
+        normalized=False,
+        threshold=0.5,
+        ranges=mdp.TrajectoryCommandCfg.Ranges(
+            pos_x=(1.0, 2.0), pos_y=(1.0, 2.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
         ),
         debug_vis=True,
     )
@@ -128,9 +128,9 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        pose_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_pose"})
-        joint_pos = ObsTerm(func=mdp.joint_pos_norm, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
+        se2_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "se2_pose"})
+        #joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.05, n_max=0.05))
         actions = ObsTerm(func=mdp.last_action)
         #contact_wrench = ObsTerm(
         #    func=mdp.body_incoming_wrench, noise=Unoise(n_min=-0.01, n_max=0.01),
@@ -203,28 +203,38 @@ class RandomizationCfg:
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
-
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
 
     # -- task
     #pose_potential_tracking_cls = mdp.pose_potential_tracking()
-    pose_potential_tracking = RewTerm(
-        func=mdp.pose_potential_tracking, weight=10.0, params={
-            "command_name": "base_pose",
-            "body_name": "dummy_revolute_yaw_link",
-            "threshold" : 0.05,
-            "asset_cfg": SceneEntityCfg("robot"),
-            })
+    #pose_potential_tracking = RewTerm(
+    #    func=mdp.pose_potential_tracking, weight=10.0,
+    #    params={
+    #        "command_name": "se2_pose",
+    #        "body_name": "dummy_revolute_yaw_link",
+    #        "threshold" : 0.01,
+    #        "asset_cfg": SceneEntityCfg("robot"),
+    #        })
     heading_tracking_exp = RewTerm(
         func=mdp.heading_tracking_exp, weight=1.0,
-        params={"command_name": "base_pose", "body_name": "dummy_revolute_yaw_link", "std": 1.0})
+        params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": math.pi**0.5})
+    goal_reached = RewTerm(
+        func=mdp.position_goal_reached_bonus, weight=0.1,
+        params={"command_name": "se2_pose", "threshold": 0.5, "bonus": 100.0})
+    pose_tracking_exp = RewTerm(
+        func=mdp.pose_tracking_exp, weight=10.0,
+        params={"command_name": "se2_pose", "std": 2})
+    #pose_tracking_inv = RewTerm(
+    #    func=mdp.pose_tracking_inv, weight=1.0,
+    #    params={"command_name": "se2_pose", "scale": 0.5})
     # -- penalties
     #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     #dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
     #dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
+    #action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
     # -- optional penalties
     #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
 
@@ -234,6 +244,8 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    #goal_reached = DoneTerm(func=mdp.position_goal_reached, params={"command_name": "se2_pose", "threshold": 0.5})
+    speed_limit = DoneTerm(func=mdp.velocity_limit, params={"body_name": "dummy_revolute_yaw_link", "threshold": 2.0})
     # TODO bad orientation
 
 
