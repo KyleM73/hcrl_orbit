@@ -13,6 +13,7 @@ class DracoRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     max_iterations = 30000
     save_interval = 50
     experiment_name = "draco_rough"
+    run_name = "draco"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
