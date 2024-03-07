@@ -46,3 +46,13 @@ class DracoFlatPPORunnerCfg(DracoRoughPPORunnerCfg):
         self.experiment_name = "draco_flat"
         self.policy.actor_hidden_dims = [256, 128, 128]
         self.policy.critic_hidden_dims = [256, 128, 128]
+
+@configclass
+class DracoWBCPPORunnerCfg(DracoRoughPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+
+        self.max_iterations = 30000
+        self.experiment_name = "draco_wbc"
+        self.policy.actor_hidden_dims = [256, 128, 128]
+        self.policy.critic_hidden_dims = [256, 128, 128]
