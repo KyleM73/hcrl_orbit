@@ -7,3 +7,4 @@
 
 from .velocity import *  # noqa
 from .navigation import * #noqa
+from .test import * # noqa
