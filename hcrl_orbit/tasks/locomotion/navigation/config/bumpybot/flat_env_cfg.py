@@ -5,7 +5,7 @@ from hcrl_orbit.locomotion.navigation.navigation_env_cfg import LocomotionNaviga
 ##
 # Pre-defined configs
 ##
-from hcrl_orbit.assets.hcrl_robots.bumpybot import BUMPYBOT_CFG  # isort: skip
+from resources.hcrl_orbit.hcrl_orbit.assets.hcrl_robots import BUMPYBOT_CFG  # isort: skip
 
 
 @configclass

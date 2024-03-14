@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+version = "0.0.1"
+name = "hcrl_orbit"
+description = "Extension containing suite of HCRL environments for robot learning."
+readme = "docs/README.md"
+keywords = ["robotics", "rl", "il", "learning"]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+authors = [
+    {name = "Kyle Morgenstein", email = "kylem@utexas.edu"},
+]
+maintainers = [
+    {name = "Kyle Morgenstein", email = "kylem@utexas.edu"},
+]
+
+[tool.setuptools]
+py-modules = ['orbit']
