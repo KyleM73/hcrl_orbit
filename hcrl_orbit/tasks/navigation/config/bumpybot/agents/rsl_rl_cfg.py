@@ -13,6 +13,9 @@ class BumpybotFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     save_interval = 50
     experiment_name = "bumpybot_flat"
     run_name = "bumpybot"
+    logger = "wandb"
+    wandb_project = "Bumpybot"
+    store_code_state = False
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,

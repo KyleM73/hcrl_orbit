@@ -5,7 +5,7 @@ from hcrl_orbit.locomotion.velocity.biped_velocity_env_cfg import BipedLocomotio
 ##
 # Pre-defined configs
 ##
-from hcrl_orbit.assets.hcrl_robots.draco import DRACO_CFG  # isort: skip
+from hcrl_orbit.assets import DRACO_CFG  # isort: skip
 
 
 @configclass
@@ -15,14 +15,14 @@ class DracoRoughEnvCfg(BipedLocomotionVelocityRoughEnvCfg):
         super().__post_init__()
 
         self.scene.robot = DRACO_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        #self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/torso_link"
+        self.scene.height_scanner = None
+        self.observations.policy.height_scan = None
         # scale down the terrains because the robot is small
-        self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.025, 0.1)
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
+        self.scene.terrain.terrain_type = "plane"
+        self.scene.terrain.terrain_generator = None
 
         # reduce action scale
-        #self.actions.joint_pos.scale = 0.0
+        self.actions.joint_pos.scale = 0.0
 
         # randomization
         self.randomization.push_robot = None
@@ -41,19 +41,12 @@ class DracoRoughEnvCfg(BipedLocomotionVelocityRoughEnvCfg):
                 "yaw": (0.0, 0.0),
             },
         }
-        #self.randomization.push_robot.params["velocity_range"] = {"x": (-0.0, 0.0), "y": (-0.0, 0.0)}
 
         # rewards
-        #self.rewards.feet_air_time.params["sensor_cfg"].body_names = ".*_ankle_ie_link"
-        #self.rewards.feet_air_time.weight = 0.01
-        #self.rewards.undesired_contacts = None
-        #self.rewards.dof_torques_l2.weight = -0.0002
-        #self.rewards.track_lin_vel_xy_exp.weight = 1.5
-        #self.rewards.track_ang_vel_z_exp.weight = 0.75
-        #self.rewards.dof_acc_l2.weight = -2.5e-7
+        self.rewards.undesired_contacts = None
 
         # terminations
-        #self.terminations.base_contact.params["sensor_cfg"].body_names = "torso_link"
+        self.terminations.base_contact.params["sensor_cfg"].body_names = "torso_link"
 
 
 @configclass
@@ -63,7 +56,7 @@ class DracoRoughEnvCfg_PLAY(DracoRoughEnvCfg):
         super().__post_init__()
 
         # make a smaller scene for play
-        self.scene.num_envs = 50
+        self.scene.num_envs = 1
         self.scene.env_spacing = 2.5
         # spawn the robot randomly in the grid (instead of their terrain levels)
         self.scene.terrain.max_init_terrain_level = None

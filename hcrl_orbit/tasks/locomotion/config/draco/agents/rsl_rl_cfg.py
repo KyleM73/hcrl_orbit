@@ -14,6 +14,9 @@ class DracoRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     save_interval = 50
     experiment_name = "draco_rough"
     run_name = "draco"
+    logger = "wandb"
+    wandb_project = "Draco"
+    store_code_state = False
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,

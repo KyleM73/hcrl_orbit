@@ -95,9 +95,9 @@ class CommandsCfg:
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0),
-        rel_standing_envs=0.02,
-        rel_heading_envs=1.0,
-        heading_command=True,
+        rel_standing_envs=0.1,
+        rel_heading_envs=0.0,
+        heading_command=False,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
@@ -197,11 +197,12 @@ class RandomizationCfg:
     )
 
     reset_robot_joints = RandTerm(
-        func=mdp.reset_joints_by_scale,
+        func=mdp.reset_in_range,
         mode="reset",
         params={
-            "position_range": (0.5, 1.5),
-            "velocity_range": (0.0, 0.0),
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+            "position_range": (-0.5, 0.5),
+            "velocity_range": (-0.1, 0.1),
         },
     )
 
