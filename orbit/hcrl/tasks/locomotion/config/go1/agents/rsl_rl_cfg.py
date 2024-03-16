@@ -45,7 +45,7 @@ class Go1FlatPPORunnerCfg(Go1RoughPPORunnerCfg):
         super().__post_init__()
 
         self.max_iterations = 300
-        self.experiment_name = "unitree_go1_flat"
+        self.experiment_name = "go1_flat"
         self.wandb_project = "Go1_Flat"
         self.policy.actor_hidden_dims = [128, 128, 128]
         self.policy.critic_hidden_dims = [128, 128, 128]

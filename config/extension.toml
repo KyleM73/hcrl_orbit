@@ -15,4 +15,4 @@ keywords = ["robotics", "rl", "il", "learning"]
 "omni.isaac.orbit" = {}
 
 [[python.module]]
-name = "hcrl_orbit"
+name = "orbit.hcrl"

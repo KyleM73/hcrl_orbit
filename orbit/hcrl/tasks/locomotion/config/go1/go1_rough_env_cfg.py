@@ -8,7 +8,7 @@ from omni.isaac.orbit_tasks.locomotion.velocity.velocity_env_cfg import Locomoti
 ##
 # Pre-defined configs
 ##
-from hcrl_orbit.assets import GO1_CFG # isort: skip
+from orbit.hcrl.assets import GO1_CFG # isort: skip
 
 @configclass
 class Go1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
@@ -55,6 +55,11 @@ class Go1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = "base"
+
+        # viewer
+        self.viewer.eye = (2.0,2.0,2.0)
+        self.viewer.origin_type = "asset_root"
+        self.viewer.asset_name = "robot"
 
 
 @configclass

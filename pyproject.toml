@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 version = "0.0.1"
-name = "hcrl_orbit"
+name = "orbit.hcrl"
 description = "Extension containing suite of HCRL environments for robot learning."
 readme = "docs/README.md"
 keywords = ["robotics", "rl", "il", "learning"]

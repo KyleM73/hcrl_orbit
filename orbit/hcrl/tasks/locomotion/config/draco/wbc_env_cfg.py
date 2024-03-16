@@ -19,14 +19,14 @@ from omni.isaac.orbit.terrains import TerrainImporterCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-#import omni.isaac.orbit.envs.mdp as mdp
-import hcrl_orbit.locomotion.velocity.mdp as mdp
+import omni.isaac.orbit.envs.mdp as mdp
+import orbit.hcrl.tasks.locomotion.mdp as hcrl_mdp
 
 ##
 # Pre-defined configs
 ##
 #from omni.isaac.orbit.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
-from hcrl_orbit.assets.hcrl_robots.draco import DRACO_CFG  # isort: skip
+from orbit.hcrl.assets.draco import DRACO_CFG  # isort: skip
 
 
 ##
@@ -187,7 +187,7 @@ class RandomizationCfg:
     )
 
     reset_robot_joints = RandTerm(
-        func=mdp.reset_in_range,
+        func=hcrl_mdp.reset_in_range,
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),

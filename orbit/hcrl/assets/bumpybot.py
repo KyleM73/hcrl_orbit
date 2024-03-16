@@ -14,6 +14,8 @@ import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.actuators import IdealPDActuatorCfg, ImplicitActuatorCfg
 from omni.isaac.orbit.assets.articulation import ArticulationCfg
 
+from orbit.hcrl import EXT_DIR
+
 ##
 # Configuration
 ##
@@ -25,7 +27,7 @@ BUMPYBOT_CFG = ArticulationCfg(
         fix_base=True,
         merge_fixed_joints=True,
         make_instanceable=True,
-        asset_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "bumpybot.urdf")),
+        asset_path=os.path.abspath(os.path.join(EXT_DIR, "resources/hcrl_robots/bumpybot/bumpybot.urdf")),
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,

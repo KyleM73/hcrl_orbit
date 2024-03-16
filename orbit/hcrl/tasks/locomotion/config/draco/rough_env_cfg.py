@@ -4,7 +4,7 @@ from omni.isaac.orbit_tasks.locomotion.velocity.velocity_env_cfg import Locomoti
 ##
 # Pre-defined configs
 ##
-from hcrl_orbit.assets import DRACO_CFG  # isort: skip
+from orbit.hcrl.assets import DRACO_CFG  # isort: skip
 
 
 @configclass

@@ -15,6 +15,8 @@ import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.actuators import IdealPDActuatorCfg, DCMotorCfg
 from omni.isaac.orbit.assets.articulation import ArticulationCfg
 
+from orbit.hcrl import EXT_DIR
+
 ##
 # Configuration
 ##
@@ -24,7 +26,7 @@ GO1_CFG = ArticulationCfg(
         fix_base=False,
         merge_fixed_joints=False,
         make_instanceable=True,
-        asset_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "go1.urdf")),
+        asset_path=os.path.abspath(os.path.join(EXT_DIR, "resources/hcrl_robots/go1/go1.urdf")),
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
