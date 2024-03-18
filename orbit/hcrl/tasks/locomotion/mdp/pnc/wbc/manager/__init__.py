@@ -1,0 +1,8 @@
+import dcm_trajectory_manager
+import floating_base_trajectory_manager
+import foot_trajectory_manager
+import hand_trajectory_manager
+import point_foot_trajectory_manager
+import reaction_force_manager
+import task_hierarchy_manager
+import upper_body_trajectory_manager
