@@ -58,16 +58,39 @@ import orbit.hcrl  # noqa: F401
 import omni.isaac.orbit_tasks  # noqa: F401
 from omni.isaac.orbit_tasks.utils import get_checkpoint_path, parse_env_cfg
 from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_onnx
+import omni.isaac.orbit.utils.math as math_utils
 
 if args_cli.plot:
     import matplotlib.pyplot as plt
 
+from orbit.hcrl.tasks.locomotion.mdp.pnc.config.draco3_config import SimConfig
+from orbit.hcrl.tasks.locomotion.mdp.pnc.draco3_pnc.draco3_interface import Draco3Interface
+from orbit.hcrl.tasks.locomotion.mdp.pnc.util import util
+from orbit.hcrl.tasks.locomotion.mdp.pnc.util import liegroup
+
+def format_obs(asset, obs_dict):
+    del obs_dict["policy"]
+    joint_idx, joint_names = asset.find_joints(name_keys=[".*"])
+    for k,v in obs_dict.items():
+        if "contact" in k:
+            obs_dict[k] = bool(v.cpu().numpy()) #need to make array for batched control
+        elif "quat" in k:
+            obs_dict[k] = math_utils.convert_quat(v, "xyzw").view(-1).cpu().numpy()
+        elif k in ["joint_pos", "joint_vel"]:
+            obs_dict[k] = {}
+            for i in range(len(joint_idx)):
+                obs_dict[k][joint_names[i]] = v.view(-1)[joint_idx[i]].cpu().numpy() 
+        else:
+            obs_dict[k] = v.cpu().view(-1).numpy()
+    return obs_dict
+
 def main():
     """Train with RSL-RL agent."""
     # parse configuration
+    print("0")
     env_cfg: RLTaskEnvCfg = parse_env_cfg(args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs)
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
-
+    print("1")
     # specify directory for logging experiments
     log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
     log_root_path = os.path.abspath(log_root_path)
@@ -77,6 +100,7 @@ def main():
     if agent_cfg.run_name:
         log_dir += f"_{agent_cfg.run_name}"
     log_dir = os.path.join(log_root_path, log_dir)
+    print("2")
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
@@ -93,20 +117,9 @@ def main():
         env = gym.wrappers.RecordVideo(env, **video_kwargs)
         #env.metadata["video.frames_per_second"] = 1.0 / env.unwrapped.step_dt
     # wrap around environment for rsl-rl
+    print("3")
     env = RslRlVecEnvWrapper(env)
-
-    # create runner from rsl-rl
-    runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
-    # write git state to logs
-    runner.add_git_repo_to_log(__file__)
-    # save resume path before creating a new log_dir
-    if agent_cfg.resume:
-        # get path to previous checkpoint
-        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
-        print(f"[INFO]: Loading model checkpoint from: {resume_path}")
-        # load previously trained model
-        runner.load(resume_path)
-
+    print("4")
     # set seed of the environment
     env.seed(agent_cfg.seed)
 
@@ -116,25 +129,26 @@ def main():
     dump_pickle(os.path.join(log_dir, "params", "env.pkl"), env_cfg)
     dump_pickle(os.path.join(log_dir, "params", "agent.pkl"), agent_cfg)
 
-    # obtain the trained policy for inference
-    policy = runner.get_inference_policy(device=env.unwrapped.device)
-
-    # export policy to onnx
-    if args_cli.onnx:
-        export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-        export_policy_as_onnx(runner.alg.actor_critic, export_model_dir, filename="policy.onnx")
-
     # reset environment
-    obs, _ = env.get_observations()
+    print("5")
+    obs, extra = env.get_observations()
+    obs_dict = format_obs(env.unwrapped.scene["robot"], extra["observations"])
     step = 0
+    # Construct Interface
+    print("constructing interface...")
+    interface = Draco3Interface()
+    print("done.")
     # simulate environment
     while simulation_app.is_running():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-            actions = policy(obs) #pypnc.interface.get_command(data)
+            #actions = policy(obs) #pypnc.interface.get_command(data)
+            command = interface.get_command(obs_dict)
+            print(command)
             # env stepping
-            obs, _, _, _ = env.step(torch.zeros_like(actions))
+            obs, _, _, extras = env.step(command)
+            obs_dict = format_obs(env.unwrapped.scene["robot"], extra["observations"])
             #print(obs)
             #print()
             if args_cli.video: env.unwrapped.render()
