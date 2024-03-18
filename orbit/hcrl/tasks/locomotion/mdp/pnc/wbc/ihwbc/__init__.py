@@ -1,3 +1,3 @@
-import ihwbc
-import ihwbc2
-import joint_integrator
+from . import ihwbc
+from . import ihwbc2
+from . import joint_integrator

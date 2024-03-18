@@ -1,2 +1,2 @@
-import dcm_planner
-import footstep
+from . import dcm_planner
+from . import footstep

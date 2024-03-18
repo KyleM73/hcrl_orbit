@@ -1,10 +1,11 @@
-import draco3_pnc
-import planner
-import robot_system
-import util
-import wbc
-import control_architecture
-import data_saver
-import interface
-import interrupt_logic
-import state_machine
+from . import draco3_pnc
+from . import planner
+from . import robot_system
+from . import util
+from . import wbc
+from . import control_architecture
+from . import data_saver
+from . import interface
+from . import interrupt_logic
+from . import state_machine
+from . import config

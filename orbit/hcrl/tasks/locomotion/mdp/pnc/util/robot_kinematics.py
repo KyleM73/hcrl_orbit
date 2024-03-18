@@ -1,4 +1,3 @@
-import pybullet as p
 import numpy as np
 import multiprocessing as mp
 from itertools import repeat
@@ -8,39 +7,39 @@ from orbit.hcrl.tasks.locomotion.mdp.pnc.util.util import *
 from orbit.hcrl.tasks.locomotion.mdp.pnc.util.liegroup import *
 
 
-def get_kinematics_config(robot, joint_id, link_id, open_chain_joints,
-                          base_link, ee_link):
-    joint_screws_in_ee = np.zeros((6, len(open_chain_joints)))
-    ee_link_state = p.getLinkState(robot, link_id[ee_link])
-    if link_id[base_link] == -1:
-        base_pos, base_quat = p.getBasePositionAndOrientation(robot)
-    else:
-        base_link_state = p.getLinkState(robot, link_id[base_link])
-        base_pos, base_quat = base_link_state[0], base_link_state[1]
-    T_w_b = RpToTrans(quat_to_rot(np.array(base_quat)), np.array(base_pos))
-    T_w_ee = RpToTrans(quat_to_rot(np.array(ee_link_state[1])),
-                       np.array(ee_link_state[0]))
-    T_b_ee = np.dot(TransInv(T_w_b), T_w_ee)
-    for i, joint_name in enumerate(open_chain_joints):
-        joint_info = p.getJointInfo(robot, joint_id[joint_name])
-        link_name = joint_info[12].decode("utf-8")
-        joint_type = joint_info[2]
-        joint_axis = joint_info[13]
-        screw_at_joint = np.zeros(6)
-        link_state = p.getLinkState(robot, link_id[link_name])
-        T_w_j = RpToTrans(quat_to_rot(np.array(link_state[5])),
-                          np.array(link_state[4]))
-        T_ee_j = np.dot(TransInv(T_w_ee), T_w_j)
-        Adj_ee_j = Adjoint(T_ee_j)
-        if joint_type == p.JOINT_REVOLUTE:
-            screw_at_joint[0:3] = np.array(joint_axis)
-        elif joint_type == p.JOINT_PRISMATIC:
-            screw_at_joint[3:6] = np.array(joint_axis)
-        else:
-            raise ValueError
-        joint_screws_in_ee[:, i] = np.dot(Adj_ee_j, screw_at_joint)
+# def get_kinematics_config(robot, joint_id, link_id, open_chain_joints,
+#                           base_link, ee_link):
+#     joint_screws_in_ee = np.zeros((6, len(open_chain_joints)))
+#     ee_link_state = p.getLinkState(robot, link_id[ee_link])
+#     if link_id[base_link] == -1:
+#         base_pos, base_quat = p.getBasePositionAndOrientation(robot)
+#     else:
+#         base_link_state = p.getLinkState(robot, link_id[base_link])
+#         base_pos, base_quat = base_link_state[0], base_link_state[1]
+#     T_w_b = RpToTrans(quat_to_rot(np.array(base_quat)), np.array(base_pos))
+#     T_w_ee = RpToTrans(quat_to_rot(np.array(ee_link_state[1])),
+#                        np.array(ee_link_state[0]))
+#     T_b_ee = np.dot(TransInv(T_w_b), T_w_ee)
+#     for i, joint_name in enumerate(open_chain_joints):
+#         joint_info = p.getJointInfo(robot, joint_id[joint_name])
+#         link_name = joint_info[12].decode("utf-8")
+#         joint_type = joint_info[2]
+#         joint_axis = joint_info[13]
+#         screw_at_joint = np.zeros(6)
+#         link_state = p.getLinkState(robot, link_id[link_name])
+#         T_w_j = RpToTrans(quat_to_rot(np.array(link_state[5])),
+#                           np.array(link_state[4]))
+#         T_ee_j = np.dot(TransInv(T_w_ee), T_w_j)
+#         Adj_ee_j = Adjoint(T_ee_j)
+#         if joint_type == p.JOINT_REVOLUTE:
+#             screw_at_joint[0:3] = np.array(joint_axis)
+#         elif joint_type == p.JOINT_PRISMATIC:
+#             screw_at_joint[3:6] = np.array(joint_axis)
+#         else:
+#             raise ValueError
+#         joint_screws_in_ee[:, i] = np.dot(Adj_ee_j, screw_at_joint)
 
-    return joint_screws_in_ee, T_b_ee
+#     return joint_screws_in_ee, T_b_ee
 
 
 def FKinBody(M, Blist, thetalist):

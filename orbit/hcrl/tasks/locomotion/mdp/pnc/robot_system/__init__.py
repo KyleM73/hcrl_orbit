@@ -1,2 +1,2 @@
-import pinocchio_robot_system
-import robot_system
+from . import pinocchio_robot_system
+from . import robot_system

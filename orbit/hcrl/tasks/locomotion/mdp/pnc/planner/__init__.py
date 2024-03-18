@@ -1,1 +1,1 @@
-import locomotion
+from . import locomotion

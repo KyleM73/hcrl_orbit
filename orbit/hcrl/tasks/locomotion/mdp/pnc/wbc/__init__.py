@@ -1,8 +1,8 @@
-import ihwbc
-import manager
-import basic_contact
-import basic_task
-import contact
-import internal_constraint
-import task
-import tci_container
+from . import ihwbc
+from . import manager
+from . import basic_contact
+from . import basic_task
+from . import contact
+from . import internal_constraint
+from . import task
+from . import tci_container
