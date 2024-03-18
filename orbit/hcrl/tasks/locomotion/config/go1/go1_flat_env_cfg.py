@@ -22,6 +22,18 @@ class Go1FlatEnvCfg(Go1RoughEnvCfg):
         # no terrain curriculum
         self.curriculum.terrain_levels = None
 
+        self.randomization.reset_base.params = {
+            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "velocity_range": {
+                "x": (-2.0, 2.0),
+                "y": (-2.0, 2.0),
+                "z": (0.0, 0.0),
+                "roll": (0.0, 0.0),
+                "pitch": (0.0, 0.0),
+                "yaw": (-1.0, 1.0),
+            },
+        }
+
 
 class Go1FlatEnvCfg_PLAY(Go1FlatEnvCfg):
     def __post_init__(self) -> None:

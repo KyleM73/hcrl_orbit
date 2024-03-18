@@ -54,7 +54,7 @@ class Go1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.dof_acc_l2.weight = -2.5e-7
 
         # terminations
-        self.terminations.base_contact.params["sensor_cfg"].body_names = "base"
+        self.terminations.base_contact.params["sensor_cfg"].body_names = ["base", ".*leg"]
 
         # viewer
         self.viewer.eye = (2.0,2.0,2.0)

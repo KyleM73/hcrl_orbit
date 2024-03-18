@@ -15,9 +15,6 @@ from omni.isaac.orbit.managers.action_manager import ActionTerm, ActionTermCfg
 if TYPE_CHECKING:
     from omni.isaac.orbit.envs import BaseEnv
 
-class WBCJointActionCfg:
-    pass
-
 class WBCJointAction(ActionTerm):
     cfg: WBCJointActionCfg
     """The configuration of the action term."""
@@ -72,3 +69,120 @@ class WBCJointAction(ActionTerm):
     """
     Properties.
     """
+    """
+    Properties.
+    """
+
+    @property
+    def action_dim(self) -> int:
+        return self._wbc_controller.action_dim
+
+    @property
+    def raw_actions(self) -> torch.Tensor:
+        return self._raw_actions
+
+    @property
+    def processed_actions(self) -> torch.Tensor:
+        return self._processed_actions
+
+    """
+    Operations.
+    """
+    def process_actions(self, actions: torch.Tensor):
+        # store the raw actions
+        self._raw_actions[:] = actions
+        self._processed_actions[:] = self.raw_actions * self._scale
+        # obtain quantities from simulation
+        ee_pos_curr, ee_quat_curr = self._compute_frame_pose()
+        # set command into controller
+        self._wbc_controller.set_command(self._processed_actions, ee_pos_curr, ee_quat_curr)
+
+    def apply_actions(self):
+        # obtain quantities from simulation
+        ee_pos_curr, ee_quat_curr = self._compute_frame_pose()
+        joint_pos = self._asset.data.joint_pos[:, self._joint_ids]
+        # compute the delta in joint-space
+        if ee_quat_curr.norm() != 0:
+            jacobian = self._compute_frame_jacobian()
+            joint_pos_des = self._wbc_controller.compute(ee_pos_curr, ee_quat_curr, jacobian, joint_pos)
+        else:
+            joint_pos_des = joint_pos.clone()
+        # set the joint position command
+        self._asset.set_joint_position_target(joint_pos_des, self._joint_ids) #See JointEffortAction
+
+    """
+    Helper functions.
+    """
+
+    def _compute_frame_pose(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """Computes the pose of the target frame in the root frame.
+
+        Returns:
+            A tuple of the body's position and orientation in the root frame.
+        """
+        # obtain quantities from simulation
+        ee_pose_w = self._asset.data.body_state_w[:, self._body_idx, :7]
+        root_pose_w = self._asset.data.root_state_w[:, :7]
+        # compute the pose of the body in the root frame
+        ee_pose_b, ee_quat_b = math_utils.subtract_frame_transforms(
+            root_pose_w[:, 0:3], root_pose_w[:, 3:7], ee_pose_w[:, 0:3], ee_pose_w[:, 3:7]
+        )
+        # account for the offset
+        if self.cfg.body_offset is not None:
+            ee_pose_b, ee_quat_b = math_utils.combine_frame_transforms(
+                ee_pose_b, ee_quat_b, self._offset_pos, self._offset_rot
+            )
+
+        return ee_pose_b, ee_quat_b
+
+    def _compute_frame_jacobian(self):
+        """Computes the geometric Jacobian of the target frame in the root frame.
+
+        This function accounts for the target frame offset and applies the necessary transformations to obtain
+        the right Jacobian from the parent body Jacobian.
+        """
+        # read the parent jacobian
+        jacobian = self._asset.root_physx_view.get_jacobians()[:, self._jacobi_body_idx, :, self._joint_ids]
+        # account for the offset
+        if self.cfg.body_offset is not None:
+            # Modify the jacobian to account for the offset
+            # -- translational part
+            # v_link = v_ee + w_ee x r_link_ee = v_J_ee * q + w_J_ee * q x r_link_ee
+            #        = (v_J_ee + w_J_ee x r_link_ee ) * q
+            #        = (v_J_ee - r_link_ee_[x] @ w_J_ee) * q
+            jacobian[:, 0:3, :] += torch.bmm(-math_utils.skew_symmetric_matrix(self._offset_pos), jacobian[:, 3:, :])
+            # -- rotational part
+            # w_link = R_link_ee @ w_ee
+            jacobian[:, 3:, :] = torch.bmm(math_utils.matrix_from_quat(self._offset_rot), jacobian[:, 3:, :])
+
+        return jacobian
+    
+
+class WBCJointActionCfg(ActionTermCfg):
+    @configclass
+    class OffsetCfg:
+        """The offset pose from parent frame to child frame.
+
+        On many robots, end-effector frames are fictitious frames that do not have a corresponding
+        rigid body. In such cases, it is easier to define this transform w.r.t. their parent rigid body.
+        For instance, for the Franka Emika arm, the end-effector is defined at an offset to the the
+        "panda_hand" frame.
+        """
+
+        pos: tuple[float, float, float] = (0.0, 0.0, 0.0)
+        """Translation w.r.t. the parent frame. Defaults to (0.0, 0.0, 0.0)."""
+        rot: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)
+        """Quaternion rotation ``(w, x, y, z)`` w.r.t. the parent frame. Defaults to (1.0, 0.0, 0.0, 0.0)."""
+
+    class_type: type[ActionTerm] = WBCJointAction
+
+    joint_names: list[str] = MISSING
+    """List of joint names or regex expressions that the action will be mapped to."""
+    body_name: str = MISSING
+    """Name of the body or frame for which WBC is performed."""
+    body_offset: OffsetCfg | None = None
+    """Offset of target frame w.r.t. to the body frame. Defaults to None, in which case no offset is applied."""
+    scale: float | tuple[float, ...] = 1.0
+    """Scale factor for the action. Defaults to 1.0."""
+    controller: WBCControllerCfg = MISSING
+    """The configuration for the WBC controller."""

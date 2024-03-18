@@ -61,27 +61,27 @@ GO1_CFG = ArticulationCfg(
             effort_limit=23.7,
             saturation_effort=23.7,
             velocity_limit=30.1,
-            stiffness=100, #25
-            damping=5, #0.5
-            friction=0.2,
+            stiffness=25,#100, #25
+            damping=0.5,#5, #0.5
+            friction=0.2, #0.2
         ),
         "uleg": DCMotorCfg(
             joint_names_expr=[".*_uleg_joint"],
             effort_limit=23.7,
             saturation_effort=23.7,
             velocity_limit=30.1,
-            stiffness=300, #25
-            damping=8, #0.5
-            friction=0.2,
+            stiffness=25,#300, #25
+            damping=0.5,#8, #0.5
+            friction=0.2, #0.2
         ),
         "lleg": DCMotorCfg(
             joint_names_expr=[".*_lleg_joint"],
             effort_limit=35.55,
             saturation_effort=35.55,
             velocity_limit=20.06,
-            stiffness=300, #25
-            damping=8, #0.5
-            friction=0.2,
+            stiffness=25,#300, #25
+            damping=0.5,#8, #0.5
+            friction=0.2, #0.2
         ),
     },
 )

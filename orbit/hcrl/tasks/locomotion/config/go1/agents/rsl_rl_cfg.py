@@ -44,7 +44,7 @@ class Go1FlatPPORunnerCfg(Go1RoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 300
+        self.max_iterations = 10000
         self.experiment_name = "go1_flat"
         self.wandb_project = "Go1_Flat"
         self.policy.actor_hidden_dims = [128, 128, 128]

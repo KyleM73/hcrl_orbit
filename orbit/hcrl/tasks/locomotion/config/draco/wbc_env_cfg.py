@@ -98,7 +98,7 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=["^(?!.*knee_fe_jp$).*"], scale=0.0, use_default_offset=True)
+    joint_pos = mdp.JointEffortActionCfg(asset_name="robot", joint_names=["^(?!.*knee_fe_jp$).*"], scale=0.0)
     # TODO: make custom WBC action cfg (WBC in self.apply_action())
 
 
@@ -121,12 +121,6 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         #joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         #actions = ObsTerm(func=mdp.last_action)
-        #height_scan = ObsTerm(
-        #    func=mdp.height_scan,
-        #    params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-        #    noise=Unoise(n_min=-0.1, n_max=0.1),
-        #    clip=(-1.0, 1.0),
-        #)
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -151,12 +145,6 @@ class RandomizationCfg:
             "restitution_range": (0.0, 0.0),
             "num_buckets": 64,
         },
-    )
-
-    add_base_mass = RandTerm(
-        func=mdp.add_body_mass,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="torso_link"), "mass_range": (-0.0, 0.0)},
     )
 
     # reset
@@ -197,49 +185,12 @@ class RandomizationCfg:
     )
 
     # interval
-    #push_robot = RandTerm(
-    #    func=mdp.push_by_setting_velocity,
-    #    mode="interval",
-    #    interval_range_s=(10.0, 15.0),
-    #    params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    #)
 
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
     pass
-    # -- task
-    #height = RewTerm(func=mdp.height, weight=10.0, params={"threshold": 0.8})
-    #track_lin_vel_xy_exp = RewTerm(
-    #    func=mdp.track_lin_vel_xy_exp, weight=10.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
-    #)
-    #track_ang_vel_z_exp = RewTerm(
-    #    func=mdp.track_ang_vel_z_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
-    #)
-    # -- penalties
-    #lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
-    #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    #dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
-    #dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    #action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    #feet_air_time = RewTerm(
-    #    func=mdp.feet_air_time_positive_biped,
-    #    weight=2.0,
-    #    params={
-    #        "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*ankle_ie_link"),
-    #        "command_name": "base_velocity",
-    #        "threshold": 0.5,
-    #    },
-    #)
-    #undesired_contacts = RewTerm(
-    #    func=mdp.undesired_contacts,
-    #    weight=-1.0,
-    #    params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*knee_fe_link"), "threshold": 1.0},
-    #)
-    # -- optional penalties
-    #flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
-    #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
 
 
 @configclass
@@ -268,7 +219,6 @@ class TerminationsCfg:
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
-
     pass
 
 
@@ -280,7 +230,8 @@ class CurriculumCfg:
 @configclass
 class WBCEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
-    viewer: ViewerCfg = ViewerCfg(eye=(3,3,3))
+    # Viewer
+    viewer: ViewerCfg = ViewerCfg(eye=(3,3,3), origin_type="asset_root", asset_name="robot")
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=2.5)
     # Basic settings
@@ -296,10 +247,10 @@ class WBCEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 1 #16
+        self.decimation = 16
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.0000125
+        self.sim.dt = 0.00125
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
