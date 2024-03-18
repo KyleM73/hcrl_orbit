@@ -8,7 +8,7 @@ from . import agents, flat_env_cfg, rough_env_cfg, wbc_env_cfg
 ##
 
 gym.register(
-    id="HCRL-Velocity-Draco-v0",
+    id="Draco-Flat-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -18,7 +18,7 @@ gym.register(
 )
 
 gym.register(
-    id="HCRL-Velocity-Draco-Play-v0",
+    id="Draco-Flat-Play-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -28,7 +28,7 @@ gym.register(
 )
 
 gym.register(
-    id="HCRL-Velocity-Rough-Draco-v0",
+    id="Draco-Rough-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -38,7 +38,7 @@ gym.register(
 )
 
 gym.register(
-    id="HCRL-Velocity-Rough-Draco-Play-v0",
+    id="Draco-Rough-Play-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -48,7 +48,7 @@ gym.register(
 )
 
 gym.register(
-    id="HCRL-WBC-v0",
+    id="Draco-Wbc-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -58,7 +58,7 @@ gym.register(
 )
 
 gym.register(
-    id="HCRL-WBC-Play-v0",
+    id="Draco-Wbc-Play-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={

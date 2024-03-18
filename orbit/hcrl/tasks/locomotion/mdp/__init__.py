@@ -3,4 +3,5 @@
 from .rewards import *  # noqa: F401, F403
 from .randomizations import *  # noqa: F401, F403
 from .actions import *  # noqa: F401, F403
-from pnc import * # noqa: F401, F403
+from .observations import *  # noqa: F401, F403
+from .pnc import * # noqa: F401, F403

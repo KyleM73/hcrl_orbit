@@ -98,8 +98,10 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointEffortActionCfg(asset_name="robot", joint_names=["^(?!.*knee_fe_jp$).*"], scale=0.0)
+    #joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=["^(?!.*knee_fe_jd$).*"], scale=0.0, use_default_offset=True) #jp -> jd
+    joint_torque = mdp.JointEffortActionCfg(asset_name="robot", joint_names=["^(?!.*knee_fe_jd$).*"], scale=1.0)
     # TODO: make custom WBC action cfg (WBC in self.apply_action())
+    #"^(?!.*knee_fe_jd$).*"
 
 
 @configclass
@@ -107,9 +109,84 @@ class ObservationsCfg:
     """Observation specifications for the MDP."""
 
     @configclass
-    class PolicyCfg(ObsGroup):
-        """Observations for policy group."""
+    class BaseComPosCfg(ObsGroup):
+        base_com_pos = ObsTerm(func=mdp.root_pos_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseComQuatCfg(ObsGroup):
+        base_com_quat = ObsTerm(func=mdp.root_quat_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseComLinVelCfg(ObsGroup):
+        base_com_lin_vel = ObsTerm(func=mdp.root_lin_vel_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseComAngVelCfg(ObsGroup):
+        base_com_ang_vel = ObsTerm(func=mdp.root_ang_vel_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseJointPosCfg(ObsGroup):
+        base_joint_pos = ObsTerm(func=mdp.root_pos_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseJointQuatCfg(ObsGroup):
+        base_joint_quat = ObsTerm(func=mdp.root_quat_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseJointLinVelCfg(ObsGroup):
+        base_joint_lin_vel = ObsTerm(func=mdp.root_lin_vel_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class BaseJointAngVelCfg(ObsGroup):
+        base_joint_ang_vel = ObsTerm(func=mdp.root_ang_vel_w)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class JointPosCfg(ObsGroup):
+        joint_pos = ObsTerm(func=hcrl_mdp.joint_pos)
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class JointVelCfg(ObsGroup):
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel) # only works because default vel is zero
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class RfContactCfg(ObsGroup):
+        b_rf_contact = ObsTerm(func=hcrl_mdp.in_contact, params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="r_ankle_ie_link"), "threshold": 1.0
+        })
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    @configclass
+    class LfContactCfg(ObsGroup):
+        b_lf_contact = ObsTerm(func=hcrl_mdp.in_contact, params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="l_ankle_ie_link"), "threshold": 1.0
+        })
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
 
+    @configclass
+    class PolicyCfg(ObsGroup):
         # observation terms (order preserved)
         #base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         #base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
@@ -119,7 +196,7 @@ class ObservationsCfg:
         #)
         #velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        #joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         #actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
@@ -128,14 +205,25 @@ class ObservationsCfg:
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
-
+    base_com_pos: BaseComPosCfg = BaseComPosCfg()
+    base_com_quat: BaseComQuatCfg = BaseComQuatCfg()
+    base_com_lin_vel: BaseComLinVelCfg = BaseComLinVelCfg()
+    base_com_ang_vel: BaseComAngVelCfg = BaseComAngVelCfg()
+    base_joint_pos: BaseJointPosCfg = BaseJointPosCfg()
+    base_joint_quat: BaseJointQuatCfg = BaseJointQuatCfg()
+    base_joint_lin_vel: BaseJointLinVelCfg = BaseJointLinVelCfg()
+    base_joint_ang_vel: BaseJointAngVelCfg = BaseJointAngVelCfg()
+    joint_pos: JointPosCfg = JointPosCfg()
+    joint_vel: JointVelCfg = JointVelCfg()
+    b_rf_contact: RfContactCfg = RfContactCfg()
+    b_lf_contact: LfContactCfg = LfContactCfg()
 
 @configclass
 class RandomizationCfg:
     """Configuration for randomization."""
-
+    pass
     # startup
-    physics_material = RandTerm(
+    """physics_material = RandTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
         params={
@@ -182,7 +270,7 @@ class RandomizationCfg:
             "position_range": (-0.0, 0.0),
             "velocity_range": (-0.0, 0.0),
         },
-    )
+    )"""
 
     # interval
 
@@ -196,8 +284,8 @@ class RewardsCfg:
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
-
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    pass
+    """time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
         params={
@@ -213,7 +301,7 @@ class TerminationsCfg:
                 ),
             "threshold": 1.0,
             },
-    )
+    )"""
 
 
 @configclass
@@ -247,10 +335,10 @@ class WBCEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 16
+        self.decimation = 1 #16
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.00125
+        self.sim.dt = 0.001 #0.00125
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
