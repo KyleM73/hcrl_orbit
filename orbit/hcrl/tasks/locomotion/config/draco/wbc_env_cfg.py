@@ -9,7 +9,7 @@ from omni.isaac.orbit.envs import RLTaskEnvCfg, ViewerCfg
 from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.orbit.managers import ObservationGroupCfg as ObsGroup
 from omni.isaac.orbit.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.orbit.managers import RandomizationTermCfg as RandTerm
+from omni.isaac.orbit.managers import EventTermCfg as EventTerm
 from omni.isaac.orbit.managers import RewardTermCfg as RewTerm
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.managers import TerminationTermCfg as DoneTerm
@@ -135,7 +135,7 @@ class RandomizationCfg:
     """Configuration for randomization."""
 
     # startup
-    physics_material = RandTerm(
+    physics_material = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
         params={
@@ -148,7 +148,7 @@ class RandomizationCfg:
     )
 
     # reset
-    base_external_force_torque = RandTerm(
+    base_external_force_torque = EventTerm(
         func=mdp.apply_external_force_torque,
         mode="reset",
         params={
@@ -158,7 +158,7 @@ class RandomizationCfg:
         },
     )
 
-    reset_base = RandTerm(
+    reset_base = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
@@ -174,7 +174,7 @@ class RandomizationCfg:
         },
     )
 
-    reset_robot_joints = RandTerm(
+    reset_robot_joints = EventTerm(
         func=hcrl_mdp.reset_in_range,
         mode="reset",
         params={
