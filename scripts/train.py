@@ -98,8 +98,8 @@ def main():
         }
         print("[INFO] Recording videos during training.")
         print_dict(video_kwargs, nesting=4)
+        env.metadata["render_fps"] = 1.0 / env.unwrapped.step_dt
         env = gym.wrappers.RecordVideo(env, **video_kwargs)
-        env.metadata["video.frames_per_second"] = 1.0 / env.unwrapped.step_dt
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env)
 
