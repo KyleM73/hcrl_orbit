@@ -9,22 +9,24 @@ import math
 from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
-from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg
+from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
 from omni.isaac.orbit.envs import RLTaskEnvCfg
 from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.orbit.managers import ObservationGroupCfg as ObsGroup
 from omni.isaac.orbit.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.orbit.managers import RandomizationTermCfg as RandTerm
+from omni.isaac.orbit.managers import EventTermCfg as EventTerm
 from omni.isaac.orbit.managers import RewardTermCfg as RewTerm
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.orbit.scene import InteractiveSceneCfg
 from omni.isaac.orbit.sensors import ContactSensorCfg, RayCasterCfg, patterns
 from omni.isaac.orbit.terrains import TerrainImporterCfg
+from omni.isaac.orbit.envs import ViewerCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-import hcrl_orbit.locomotion.navigation.mdp as mdp
+import omni.isaac.orbit.envs.mdp as mdp
+import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
 
 ##
 # Pre-defined configs
@@ -42,9 +44,12 @@ class MySceneCfg(InteractiveSceneCfg):
     """Configuration for the terrain scene with a legged robot."""
 
     # ground terrain
+    #ground: AssetBaseCfg = MISSING
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
+        terrain_generator=None,
+        max_init_terrain_level=5,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
@@ -52,10 +57,15 @@ class MySceneCfg(InteractiveSceneCfg):
             static_friction=1.0,
             dynamic_friction=1.0,
         ),
+        visual_material=sim_utils.MdlFileCfg(
+            mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
+            project_uvw=True,
+        ),
         debug_vis=False,
     )
     # robots
     robot: ArticulationCfg = MISSING
+    #obj: RigidObjectCfg = MISSING
     # sensors
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=False)
     # lights
@@ -75,14 +85,14 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-    se2_pose = mdp.TrajectoryCommandCfg(
+    se2_pose = hcrl_mdp.TrajectoryCommandCfg(
         asset_name="robot",
         body_name="dummy_revolute_yaw_link",
         resampling_time_range=(10.0, 15.0),
         simple_heading=True,
         normalized=False,
         threshold=0.5,
-        ranges=mdp.TrajectoryCommandCfg.Ranges(
+        ranges=hcrl_mdp.TrajectoryCommandCfg.Ranges(
             pos_x=(1.0, 2.0), pos_y=(1.0, 2.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
         ),
         debug_vis=True,
@@ -91,33 +101,14 @@ class CommandsCfg:
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    # TODO dont we want this to be holonomic? write new action class
-    """se2_pose = mdp.HolonomicActionCfg(
+    velocity = hcrl_mdp.HolonomicActionCfg(
         asset_name="robot",
         x_joint_name=["dummy_prismatic_x_joint"],
         y_joint_name=["dummy_prismatic_y_joint"],
         yaw_joint_name=["dummy_revolute_yaw_joint"],
-        scale=(0,0,0), offset=(1.0,0.0,0.0) # TODO this may be too high
-        )"""
-    #se2_pose = mdp.JointEffortActionCfg(
-    #    asset_name="robot",
-    #    joint_names=[".*"],
-    #    scale={"dummy_prismatic.*": 10.0,
-    #           "dummy_revolute.*": 1.0,
-    #           },
-    #    offset={"dummy_prismatic.*": 0.0,
-    #           "dummy_revolute.*": 0.0,
-    #           },
-    #    )
-    se2_pose = mdp.JointVelocityActionCfg(
-        asset_name="robot",
-        joint_names=[".*"],
-        scale={"dummy_prismatic.*": 1.0,
-               "dummy_revolute.*": 3.14,
-               },
-        use_default_offset=True,
+        body_name=["dummy_revolute_yaw_link"],
+        scale=(0.1,0.1,0.1), offset=(0.0,0.0,0.0),
     )
-
 
 @configclass
 class ObservationsCfg:
@@ -128,14 +119,16 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        se2_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "se2_pose"})
-        #joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.05, n_max=0.05))
+        se2_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "se2_pose"}) # body frame
+        #root_pos = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.1, n_max=0.1))
+        #yaw = ObsTerm(
+        #    func=mdp.joint_pos_rel,
+        #    params={"asset_cfg": SceneEntityCfg("robot", joint_names="dummy_revolute_yaw_joint")},
+        #    noise=Unoise(n_min=-0.1, n_max=0.1)
+        #)
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         actions = ObsTerm(func=mdp.last_action)
-        #contact_wrench = ObsTerm(
-        #    func=mdp.body_incoming_wrench, noise=Unoise(n_min=-0.01, n_max=0.01),
-        #    params={"asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute.*")}
-        #    )
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -150,36 +143,14 @@ class RandomizationCfg:
     """Configuration for randomization."""
 
     # startup
-    physics_material = RandTerm(
-        func=mdp.randomize_rigid_body_material,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.0, 0.0), #0.8
-            "dynamic_friction_range": (0.0, 0.0), #0.6
-            "restitution_range": (0.0, 0.0),
-            "num_buckets": 64,
-        },
-    )
-
-    add_base_mass = RandTerm(
+    add_base_mass = EventTerm(
         func=mdp.add_body_mass,
         mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute.*"), "mass_range": (-0.0, 0.0)},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute_yaw_link"), "mass_range": (-1.0, 1.0)},
     )
 
     # reset
-    base_external_force_torque = RandTerm(
-        func=mdp.apply_external_force_torque,
-        mode="reset",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute.*"),
-            "force_range": (0.0, 0.0),
-            "torque_range": (-0.0, 0.0),
-        },
-    )
-
-    reset_base = RandTerm(
+    reset_base = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
@@ -196,7 +167,7 @@ class RandomizationCfg:
     )
 
     # interval
-    push_robot = RandTerm(
+    push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
         interval_range_s=(2.0, 5.0),
@@ -218,14 +189,14 @@ class RewardsCfg:
     #        "asset_cfg": SceneEntityCfg("robot"),
     #        })
     heading_tracking_exp = RewTerm(
-        func=mdp.heading_tracking_exp, weight=1.0,
+        func=hcrl_mdp.heading_tracking_exp, weight=1.0,
         params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": math.pi**0.5})
-    goal_reached = RewTerm(
-        func=mdp.position_goal_reached_bonus, weight=0.1,
-        params={"command_name": "se2_pose", "threshold": 0.5, "bonus": 100.0})
+    #goal_reached = RewTerm(
+    #    func=mdp.position_goal_reached_bonus, weight=0.1,
+    #    params={"command_name": "se2_pose", "threshold": 0.5, "bonus": 100.0})
     pose_tracking_exp = RewTerm(
-        func=mdp.pose_tracking_exp, weight=10.0,
-        params={"command_name": "se2_pose", "std": 2})
+        func=hcrl_mdp.pose_tracking_exp, weight=1.0,
+        params={"command_name": "se2_pose", "std": 2.0**0.5})
     #pose_tracking_inv = RewTerm(
     #    func=mdp.pose_tracking_inv, weight=1.0,
     #    params={"command_name": "se2_pose", "scale": 0.5})
@@ -233,34 +204,27 @@ class RewardsCfg:
     #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     #dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
     #dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
+    #action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
     #action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
     # -- optional penalties
     #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
-
 
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    #goal_reached = DoneTerm(func=mdp.position_goal_reached, params={"command_name": "se2_pose", "threshold": 0.5})
-    speed_limit = DoneTerm(func=mdp.velocity_limit, params={"body_name": "dummy_revolute_yaw_link", "threshold": 2.0})
-    # TODO bad orientation
-
+    goal_reached = DoneTerm(func=hcrl_mdp.position_goal_reached, params={"command_name": "se2_pose", "threshold": 0.2}, time_out=True)
+    #speed_limit = DoneTerm(func=mdp.velocity_limit, params={"body_name": "dummy_revolute_yaw_link", "threshold": 2.0})
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
-
-    #terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
     pass
-
 
 ##
 # Environment configuration
 ##
-
 
 @configclass
 class LocomotionNavigationFlatEnvCfg(RLTaskEnvCfg):
@@ -268,6 +232,8 @@ class LocomotionNavigationFlatEnvCfg(RLTaskEnvCfg):
 
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
+    viewer: ViewerCfg = ViewerCfg(eye=(7.5,7.5,7.5),origin_type="env")
+    #viewer: ViewerCfg = ViewerCfg(eye=(3.0, 3.0, 3.0), origin_type="asset_root", asset_name="robot")
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

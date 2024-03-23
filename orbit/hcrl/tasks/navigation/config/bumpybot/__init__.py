@@ -8,7 +8,7 @@ from . import agents, flat_env_cfg
 ##
 
 gym.register(
-    id="Isaac-HCRL-Navigation-Bumpybot-v0",
+    id="Bumpybot-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
@@ -18,7 +18,7 @@ gym.register(
 )
 
 gym.register(
-    id="Isaac-HCRL-Navigation-Bumpybot-Play-v0",
+    id="Bumpybot-Play-v0",
     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={

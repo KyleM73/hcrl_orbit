@@ -132,7 +132,7 @@ def main():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-            actions = policy(obs) #pypnc.interface.get_command(data)
+            actions = policy(obs)
             # env stepping
             obs, _, _, _ = env.step(actions)
             env.unwrapped.render()

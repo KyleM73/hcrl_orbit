@@ -268,11 +268,11 @@ class TrajectoryCommand(CommandTerm):
     @property
     def command(self) -> torch.Tensor:
         """The desired base position in base frame. Shape is (num_envs, 3)."""
-        cmd = torch.cat((self.pos_command_b[:, :2],self.heading_command_b.view(-1, 1)),dim=-1)
+        command = torch.cat((self.pos_command_b[:, :2], self.heading_command_b.view(-1, 1)), dim=-1)
         #TODO fix numerical issues with divide by zero
         if self.cfg.normalized:
-            cmd /= self.norm
-        return cmd
+            command /= self.norm
+        return command
 
     """
     Implementation specific functions.
@@ -307,12 +307,17 @@ class TrajectoryCommand(CommandTerm):
     def _update_command(self):
         """Re-target the position command to the current root position and heading."""
         # resample when near target
-        env_ids = (torch.linalg.norm(self.pos_command_b, dim=-1) < self.cfg.threshold).nonzero().flatten()
-        self._resample_command(env_ids)
+        #env_ids = (torch.linalg.norm(self.pos_command_b, dim=-1) < self.cfg.threshold).nonzero().flatten()
+        #self._resample_command(env_ids)
+        print("pose: ",self.robot.data.body_pos_w[:, self.body_id, :])
+        print("velocity: ",self.robot.data.body_lin_vel_w[:, self.body_id, :])
         target_vec = self.pos_command_w - self.robot.data.body_pos_w[:, self.body_id, :]
+        target_vec[:, 2] = 0
         self.pos_command_b[:] = quat_rotate_inverse(yaw_quat(self.robot.data.body_quat_w[:, self.body_id, :]), target_vec)
         _,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[:, self.body_id, :])
         self.heading_command_b[:] = wrap_to_pi(self.heading_command_w - yaw)
+        print("pos comand: ",self.pos_command_b)
+        print("heading_command: ",self.heading_command_b)
 
     def _update_metrics(self):
         # logs data

@@ -11,7 +11,7 @@ class BumpybotFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 5000
     save_interval = 50
-    experiment_name = "bumpybot_flat"
+    experiment_name = "bumpybot_test"
     run_name = "bumpybot"
     logger = "wandb"
     wandb_project = "Bumpybot"
