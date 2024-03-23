@@ -12,9 +12,24 @@ from orbit.hcrl import EXT_DIR
 # Configuration
 ##
 
+
 HOSPITAL_CFG = AssetBaseCfg(
     prim_path="/World/ground",
     spawn=sim_utils.UsdFileCfg(
         usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Hospital/hospital.usd",
+    )
+)
+
+ROOM_CFG = AssetBaseCfg(
+    prim_path="/World/ground",
+    spawn=sim_utils.UsdFileCfg(
+        usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Simple_Room/simple_room.usd",
+    )
+)
+
+DEFAULT_CFG = AssetBaseCfg(
+    prim_path="/World/ground",
+    spawn=sim_utils.UsdFileCfg(
+        usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Grid/default_environment.usd",
     )
 )
