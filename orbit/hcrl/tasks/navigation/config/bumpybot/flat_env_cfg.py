@@ -25,7 +25,7 @@ import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import BUMPYBOT_CFG, BUMPYBOT_OBJECT_CFG, GO1_CFG, CUBE_CFG, HOSPITAL_CFG  # isort: skip
+from orbit.hcrl.assets import BUMPYBOT_CFG, GO1_CFG, CUBE_CFG, HOSPITAL_CFG  # isort: skip
 from .navigation_env_cfg import LocomotionNavigationFlatEnvCfg
 
 ##
@@ -39,15 +39,14 @@ class BumpybotFlatEnvCfg(LocomotionNavigationFlatEnvCfg):
         super().__post_init__()
 
         self.scene.robot = BUMPYBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        #self.scene.obj = BUMPYBOT_OBJECT_CFG.replace(prim_path="{ENV_REGEX_NS}/Object")
         #self.scene.ground = HOSPITAL_CFG.replace(prim_path="{ENV_REGEX_NS}/Scene")
 
         # turn off contact sensors
         self.scene.contactf_forces = None
 
         # reduce action scale
-        self.actions.velocity.scale = (0,0,0)
-        self.actions.velocity.offset = (0.01,0,0)
+        self.actions.velocity.scale = (1,1,1)
+        self.actions.velocity.offset = (0,0,0)
 
 @configclass
 class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):

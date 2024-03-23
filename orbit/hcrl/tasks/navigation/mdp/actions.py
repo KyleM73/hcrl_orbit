@@ -130,13 +130,12 @@ class HolonomicAction(ActionTerm):
 
     def apply_actions(self):
         # obtain current heading
-        quat_w = self._asset.data.body_quat_w[:, self._body_idx].view(self.num_envs, 4)
+        quat_w = self._asset.data.body_quat_w[:, self._body_idx].squeeze(1)
         yaw_w = euler_xyz_from_quat(quat_w)[2]
         # compute joint velocities targets
         self._joint_vel_command[:, 0] = torch.cos(yaw_w) * (self.processed_actions[:, 0] + self.processed_actions[:, 1])  # x
         self._joint_vel_command[:, 1] = torch.sin(yaw_w) * (self.processed_actions[:, 0] - self.processed_actions[:, 1])  # y
         self._joint_vel_command[:, 2] = self.processed_actions[:, 2]  # yaw
-        print("actions: ",self._joint_vel_command)
         # set the joint velocity targets
         self._asset.set_joint_velocity_target(self._joint_vel_command, joint_ids=self._joint_ids)
 
@@ -149,15 +148,15 @@ class HolonomicActionCfg(ActionTermCfg):
 
     class_type: type[ActionTerm] = HolonomicAction
 
+    body_name: str = MISSING
+    """Name of the body which has the dummy mechanism connected to."""
     x_joint_name: str = MISSING
     """The dummy joint name in the x direction."""
     y_joint_name: str = MISSING
     """The dummy joint name in the y direction."""
     yaw_joint_name: str = MISSING
     """The dummy joint name in the yaw direction."""
-    body_name: str = MISSING
-    """The body link."""
-    scale: tuple[float, float] = (1.0, 1.0, 1.0)
-    """Scale factor for the action. Defaults to (1.0, 1.0, 1.0)."""
-    offset: tuple[float, float] = (0.0, 0.0, 0.0)
-    """Offset factor for the action. Defaults to (0.0, 0.0, 0.0)."""
+    scale: tuple[float, float] = (1.0, 1.0)
+    """Scale factor for the action. Defaults to (1.0, 1.0)."""
+    offset: tuple[float, float] = (0.0, 0.0)
+    """Offset factor for the action. Defaults to (0.0, 0.0)."""

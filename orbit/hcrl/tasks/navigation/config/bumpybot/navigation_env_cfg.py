@@ -24,6 +24,8 @@ from omni.isaac.orbit.terrains import TerrainImporterCfg
 from omni.isaac.orbit.envs import ViewerCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
+from omni.isaac.orbit.utils.noise import AdditiveGaussianNoiseCfg as Gnoise
+from omni.isaac.orbit.utils.assets import ISAAC_NUCLEUS_DIR
 
 import omni.isaac.orbit.envs.mdp as mdp
 import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
@@ -44,13 +46,13 @@ class MySceneCfg(InteractiveSceneCfg):
     """Configuration for the terrain scene with a legged robot."""
 
     # ground terrain
-    #ground: AssetBaseCfg = MISSING
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
-        terrain_type="plane",
+        terrain_type="plane", #usd
         terrain_generator=None,
         max_init_terrain_level=5,
         collision_group=-1,
+        usd_path=None,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
             restitution_combine_mode="multiply",
@@ -61,7 +63,7 @@ class MySceneCfg(InteractiveSceneCfg):
             mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
             project_uvw=True,
         ),
-        debug_vis=False,
+        debug_vis=True,
     )
     # robots
     robot: ArticulationCfg = MISSING
@@ -87,13 +89,13 @@ class CommandsCfg:
     """Command specifications for the MDP."""
     se2_pose = hcrl_mdp.TrajectoryCommandCfg(
         asset_name="robot",
-        body_name="dummy_revolute_yaw_link",
+        body_name="robot_link",
         resampling_time_range=(10.0, 15.0),
         simple_heading=True,
         normalized=False,
-        threshold=0.5,
+        threshold=0.2,
         ranges=hcrl_mdp.TrajectoryCommandCfg.Ranges(
-            pos_x=(1.0, 2.0), pos_y=(1.0, 2.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
+            pos_x=(1.0, 5.0), pos_y=(1.0, 5.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
         ),
         debug_vis=True,
     )
@@ -106,8 +108,8 @@ class ActionsCfg:
         x_joint_name=["dummy_prismatic_x_joint"],
         y_joint_name=["dummy_prismatic_y_joint"],
         yaw_joint_name=["dummy_revolute_yaw_joint"],
-        body_name=["dummy_revolute_yaw_link"],
-        scale=(0.1,0.1,0.1), offset=(0.0,0.0,0.0),
+        body_name=["robot_link"],
+        scale=(1.0,1.0,1.0), offset=(0.0,0.0,0.0),
     )
 
 @configclass
@@ -143,11 +145,11 @@ class RandomizationCfg:
     """Configuration for randomization."""
 
     # startup
-    add_base_mass = EventTerm(
+    """add_base_mass = EventTerm(
         func=mdp.add_body_mass,
         mode="startup",
         params={"asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute_yaw_link"), "mass_range": (-1.0, 1.0)},
-    )
+    )"""
 
     # reset
     reset_base = EventTerm(
@@ -155,24 +157,17 @@ class RandomizationCfg:
         mode="reset",
         params={
             "pose_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0), "yaw": (-3.14, 3.14)},
-            "velocity_range": {
-                "x": (-0.5, 0.5),
-                "y": (-0.5, 0.5),
-                "z": (-0.0, 0.0),
-                "roll": (-0.0, 0.0),
-                "pitch": (-0.0, 0.0),
-                "yaw": (-0.5, 0.5),
-            },
+            "velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-0.5, 0.5)},
         },
     )
 
     # interval
-    push_robot = EventTerm(
+    """push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
         interval_range_s=(2.0, 5.0),
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    )
+    )"""
 
 @configclass
 class RewardsCfg:
@@ -231,9 +226,9 @@ class LocomotionNavigationFlatEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
-    viewer: ViewerCfg = ViewerCfg(eye=(7.5,7.5,7.5),origin_type="env")
-    #viewer: ViewerCfg = ViewerCfg(eye=(3.0, 3.0, 3.0), origin_type="asset_root", asset_name="robot")
+    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5.0, replicate_physics=True)
+    viewer: ViewerCfg = ViewerCfg(eye=(7.5, 7.5, 7.5), origin_type="world")
+    #viewer: ViewerCfg = ViewerCfg(eye=(7.5, 7.5, 7.5), origin_type="asset_root", asset_name="robot")
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
