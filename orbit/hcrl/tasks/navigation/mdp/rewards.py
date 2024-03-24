@@ -86,3 +86,13 @@ class pose_potential_tracking(ManagerTermBase):
         self.last_distance_to_goal = goal_pose
         # reward terms
         return torch.clamp(potential, -1, 1)
+
+def joint_velocity_limit(env: RLTaskEnv, asset_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    speed = asset.data.joint_vel[:, asset_cfg.joint_ids].abs()
+    velocity_penalty = torch.where(speed > threshold,
+        speed - threshold,
+        0,
+    )
+    return torch.sum(torch.square(velocity_penalty), dim=1)

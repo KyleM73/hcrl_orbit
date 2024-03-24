@@ -93,7 +93,7 @@ class TrajectoryCommand(CommandTerm):
 
         if self.cfg.simple_heading:
             # set heading command to point towards target
-            target_vec = self.pos_command_w[env_ids] - self.robot.data.body_pos_w[env_ids, self.body_id]
+            target_vec = self.pos_command_w[env_ids]# - self.robot.data.body_pos_w[env_ids, self.body_id]
             target_direction = torch.atan2(target_vec[:, 1], target_vec[:, 0])
             #_,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[env_ids, self.body_id, :])
             self.heading_command_w[env_ids] = wrap_to_pi(target_direction)
@@ -111,10 +111,7 @@ class TrajectoryCommand(CommandTerm):
             self.heading_command_w[env_ids] = r.uniform_(*self.cfg.ranges.heading)
 
     def _update_command(self):
-        """Re-target the position command to the current root position and heading."""
-        # resample when near target
-        #env_ids = (torch.linalg.norm(self.pos_command_b, dim=-1) < self.cfg.threshold).nonzero().flatten()
-        #self._resample_command(env_ids)
+        """Re-target the position command to the current body position and heading."""
         #print("pose: ",self.robot.data.body_pos_w[:, self.body_id, :])
         #print("velocity: ",self.robot.data.body_lin_vel_w[:, self.body_id, :])
         target_vec = self.pos_command_w - self.robot.data.body_pos_w[:, self.body_id, :]
@@ -128,7 +125,7 @@ class TrajectoryCommand(CommandTerm):
     def _update_metrics(self):
         # logs data
         self.metrics["error_pos"] = torch.norm(self.pos_command_b[:, :2], dim=1)
-        _,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[:, self.body_id, :])
+        #_,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[:, self.body_id, :])
         self.metrics["error_heading"] = torch.abs(self.heading_command_b)
 
     def _set_debug_vis_impl(self, debug_vis: bool):
@@ -159,20 +156,20 @@ class TrajectoryCommand(CommandTerm):
                 marker_cfg.markers["arrow"].scale = (0.3, 0.3, 0.3)
                 self.heading_goal_visualizer = VisualizationMarkers(marker_cfg)
                 # -- current
-                marker_cfg = BLUE_ARROW_X_MARKER_CFG.copy()
-                marker_cfg.prim_path = "/Visuals/Command/heading_current"
-                marker_cfg.markers["arrow"].scale = (0.3, 0.3, 0.3)
-                self.heading_visualizer = VisualizationMarkers(marker_cfg)
+                #marker_cfg = BLUE_ARROW_X_MARKER_CFG.copy()
+                #marker_cfg.prim_path = "/Visuals/Command/heading_current"
+                #marker_cfg.markers["arrow"].scale = (0.3, 0.3, 0.3)
+                #self.heading_visualizer = VisualizationMarkers(marker_cfg)
             # set their visibility to true
             self.goal_visualizer.set_visibility(True)
             self.heading_goal_visualizer.set_visibility(True)
-            self.heading_visualizer.set_visibility(True)
+            #self.heading_visualizer.set_visibility(True)
         else:
             if hasattr(self, "goal_visualizer"):
                 self.goal_visualizer.set_visibility(False)
             if hasattr(self, "heading_goal_visualizer"):
                 self.heading_goal_visualizer.set_visibility(False)
-                self.heading_visualizer.set_visibility(False)
+                #self.heading_visualizer.set_visibility(False)
 
     def _debug_vis_callback(self, event):
         # update the goal marker
@@ -185,7 +182,7 @@ class TrajectoryCommand(CommandTerm):
         base_pos_w[:, 2] += 0.75
         # display markers
         self.heading_goal_visualizer.visualize(base_pos_w, self._resolve_heading_to_arrow())
-        self.heading_visualizer.visualize(base_pos_w, self.robot.data.body_quat_w[:, self.body_id, :])
+        #self.heading_visualizer.visualize(base_pos_w, self.robot.data.body_quat_w[:, self.body_id, :])
 
     """
     Internal helpers.
@@ -194,8 +191,8 @@ class TrajectoryCommand(CommandTerm):
     def _resolve_heading_to_arrow(self) -> torch.Tensor:
         """Converts the heading command to arrow direction rotation."""
         # arrow-direction
-        zeros = torch.zeros_like(self.heading_command_w)
-        arrow_quat = quat_from_euler_xyz(zeros, zeros, self.heading_command_w)
+        zeros = torch.zeros_like(self.heading_command_b)
+        arrow_quat = quat_from_euler_xyz(zeros, zeros, self.heading_command_b)
         return arrow_quat
     
 @configclass

@@ -63,7 +63,7 @@ class MySceneCfg(InteractiveSceneCfg):
             mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
             project_uvw=True,
         ),
-        debug_vis=True,
+        debug_vis=False,
     )
     # robots
     robot: ArticulationCfg = MISSING
@@ -122,12 +122,6 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         se2_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "se2_pose"}) # body frame
-        #root_pos = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.1, n_max=0.1))
-        #yaw = ObsTerm(
-        #    func=mdp.joint_pos_rel,
-        #    params={"asset_cfg": SceneEntityCfg("robot", joint_names="dummy_revolute_yaw_joint")},
-        #    noise=Unoise(n_min=-0.1, n_max=0.1)
-        #)
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         actions = ObsTerm(func=mdp.last_action)
@@ -145,11 +139,11 @@ class RandomizationCfg:
     """Configuration for randomization."""
 
     # startup
-    """add_base_mass = EventTerm(
+    add_base_mass = EventTerm(
         func=mdp.add_body_mass,
         mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="dummy_revolute_yaw_link"), "mass_range": (-1.0, 1.0)},
-    )"""
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link"), "mass_range": (-2.0, 2.0)},
+    )
 
     # reset
     reset_base = EventTerm(
@@ -162,27 +156,18 @@ class RandomizationCfg:
     )
 
     # interval
-    """push_robot = EventTerm(
+    push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
         interval_range_s=(2.0, 5.0),
-        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
-    )"""
+        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-0.5, 0.5)}},
+    )
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
 
     # -- task
-    #pose_potential_tracking_cls = mdp.pose_potential_tracking()
-    #pose_potential_tracking = RewTerm(
-    #    func=mdp.pose_potential_tracking, weight=10.0,
-    #    params={
-    #        "command_name": "se2_pose",
-    #        "body_name": "dummy_revolute_yaw_link",
-    #        "threshold" : 0.01,
-    #        "asset_cfg": SceneEntityCfg("robot"),
-    #        })
     goal_reached = RewTerm(
         func=hcrl_mdp.position_goal_reached_bonus, weight=10.0,
         params={"command_name": "se2_pose", "threshold": 0.2, "bonus": 1.0})
@@ -192,17 +177,17 @@ class RewardsCfg:
     heading_tracking_exp = RewTerm(
         func=hcrl_mdp.heading_tracking_exp, weight=1.0,
         params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": math.pi**0.5})
-    #pose_tracking_inv = RewTerm(
-    #    func=mdp.pose_tracking_inv, weight=1.0,
-    #    params={"command_name": "se2_pose", "scale": 0.5})
     # -- penalties
-    #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-0.00005)
-    #dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
-    action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
-    # -- optional penalties
-    #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    action_l2 = RewTerm(func=mdp.action_l2, weight=-5e-3)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-5e-3)
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
+    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
+    dof_prismatic_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-1,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic.*"]), "threshold": 1.0},
+    )
+    dof_revolute_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-1,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_revolute.*"]), "threshold": math.pi},
+    )
 
 @configclass
 class TerminationsCfg:
@@ -210,7 +195,6 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     goal_reached = DoneTerm(func=hcrl_mdp.position_goal_reached, params={"command_name": "se2_pose", "threshold": 0.2}, time_out=True)
-    #speed_limit = DoneTerm(func=mdp.velocity_limit, params={"body_name": "dummy_revolute_yaw_link", "threshold": 2.0})
 
 @configclass
 class CurriculumCfg:
