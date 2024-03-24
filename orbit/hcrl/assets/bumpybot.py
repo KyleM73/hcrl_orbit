@@ -57,7 +57,7 @@ BUMPYBOT_CFG = ArticulationCfg(
     actuators={
         "prismatic": IdealPDActuatorCfg(
             joint_names_expr=["dummy_prismatic.*"],
-            effort_limit=1000.0,
+            effort_limit=100.0,
             velocity_limit=10.0,
             stiffness={"dummy_prismatic.*": 0},
             damping={"dummy_prismatic.*": 100},
@@ -65,7 +65,7 @@ BUMPYBOT_CFG = ArticulationCfg(
         ),
          "revolute": IdealPDActuatorCfg(
             joint_names_expr=["dummy_revolute.*"],
-            effort_limit=1000.0,
+            effort_limit=100.0,
             velocity_limit=10.0,
             stiffness={"dummy_revolute.*": 0},
             damping={"dummy_revolute.*": 100},

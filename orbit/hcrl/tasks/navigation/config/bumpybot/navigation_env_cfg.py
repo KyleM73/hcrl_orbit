@@ -183,24 +183,24 @@ class RewardsCfg:
     #        "threshold" : 0.01,
     #        "asset_cfg": SceneEntityCfg("robot"),
     #        })
+    goal_reached = RewTerm(
+        func=hcrl_mdp.position_goal_reached_bonus, weight=10.0,
+        params={"command_name": "se2_pose", "threshold": 0.2, "bonus": 1.0})
+    pose_tracking_exp = RewTerm(
+        func=hcrl_mdp.pose_tracking_exp, weight=4.0,
+        params={"command_name": "se2_pose", "std": 4.0**0.5})
     heading_tracking_exp = RewTerm(
         func=hcrl_mdp.heading_tracking_exp, weight=1.0,
         params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": math.pi**0.5})
-    #goal_reached = RewTerm(
-    #    func=mdp.position_goal_reached_bonus, weight=0.1,
-    #    params={"command_name": "se2_pose", "threshold": 0.5, "bonus": 100.0})
-    pose_tracking_exp = RewTerm(
-        func=hcrl_mdp.pose_tracking_exp, weight=1.0,
-        params={"command_name": "se2_pose", "std": 2.0**0.5})
     #pose_tracking_inv = RewTerm(
     #    func=mdp.pose_tracking_inv, weight=1.0,
     #    params={"command_name": "se2_pose", "scale": 0.5})
     # -- penalties
     #ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    #dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-0.00005)
     #dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    #action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
-    #action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
+    action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
     # -- optional penalties
     #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
 

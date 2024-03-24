@@ -45,8 +45,8 @@ class BumpybotFlatEnvCfg(LocomotionNavigationFlatEnvCfg):
         self.scene.contactf_forces = None
 
         # reduce action scale
-        self.actions.velocity.scale = (1,1,1)
-        self.actions.velocity.offset = (0,0,0)
+        self.actions.velocity.scale = (0.5,0.5,0.5)
+        self.actions.velocity.offset = (0.0,0.0,0.0)
 
 @configclass
 class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):
@@ -56,7 +56,7 @@ class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):
 
         # make a smaller scene for play
         self.scene.num_envs = 1
-        self.scene.env_spacing = 2.5
+        self.scene.env_spacing = 5.0
         # spawn the robot randomly in the grid (instead of their terrain levels)
         self.scene.terrain.max_init_terrain_level = None
 
