@@ -112,20 +112,15 @@ class TrajectoryCommand(CommandTerm):
 
     def _update_command(self):
         """Re-target the position command to the current body position and heading."""
-        #print("pose: ",self.robot.data.body_pos_w[:, self.body_id, :])
-        #print("velocity: ",self.robot.data.body_lin_vel_w[:, self.body_id, :])
         target_vec = self.pos_command_w - self.robot.data.body_pos_w[:, self.body_id, :]
         target_vec[:, 2] = 0
         self.pos_command_b[:] = quat_apply_yaw(self.robot.data.body_quat_w[:, self.body_id, :], target_vec)
         _,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[:, self.body_id, :])
         self.heading_command_b[:] = wrap_to_pi(self.heading_command_w - yaw)
-        #print("pos comand: ",self.pos_command_b)
-        #print("heading_command: ",self.heading_command_b)
 
     def _update_metrics(self):
         # logs data
         self.metrics["error_pos"] = torch.norm(self.pos_command_b[:, :2], dim=1)
-        #_,_,yaw = euler_xyz_from_quat(self.robot.data.body_quat_w[:, self.body_id, :])
         self.metrics["error_heading"] = torch.abs(self.heading_command_b)
 
     def _set_debug_vis_impl(self, debug_vis: bool):

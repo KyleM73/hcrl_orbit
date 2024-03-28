@@ -11,12 +11,19 @@ from omni.isaac.orbit.managers import ManagerTermBase, RewardTermCfg, SceneEntit
 if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
 
-def pose_tracking_exp(env: RLTaskEnv, command_name: str, std: float = 1.0) -> torch.Tensor:
+def pose_tracking_exp_l2(env: RLTaskEnv, command_name: str, std: float = 1.0) -> torch.Tensor:
     """
     Reward pose command tracking
     """
     goal_pose_b = env.command_manager.get_command(command_name)[:, :2] # x-y command
     return torch.exp(-torch.sum(torch.square(goal_pose_b), dim=-1)/std**2)
+
+def pose_tracking_exp_l1(env: RLTaskEnv, command_name: str, std: float = 1.0) -> torch.Tensor:
+    """
+    Reward pose command tracking
+    """
+    goal_pose_b = env.command_manager.get_command(command_name)[:, :2] # x-y command
+    return torch.exp(-torch.sum(goal_pose_b.abs(), dim=-1)/std**2)
 
 def vel_dir_tracking_inv(env: RLTaskEnv, command_name: str, body_name: str, std: float = 1.0) -> torch.Tensor:
     """
@@ -26,7 +33,7 @@ def vel_dir_tracking_inv(env: RLTaskEnv, command_name: str, body_name: str, std:
     pose_norm = torch.linalg.norm(goal_pose_b, dim=-1)
     goal_velocity_direction = torch.where(pose_norm > 1e-3, goal_pose_b / pose_norm, torch.zeros_like(goal_pose_b))
 
-def heading_tracking_exp(env: RLTaskEnv, command_name: str, body_name: str, std: float = 1.0) -> torch.Tensor:
+def heading_tracking_exp_l2(env: RLTaskEnv, command_name: str, body_name: str, std: float = 1.0) -> torch.Tensor:
     """
     Reward heading command tracking
     """
@@ -35,6 +42,16 @@ def heading_tracking_exp(env: RLTaskEnv, command_name: str, body_name: str, std:
     #body_id = asset.find_bodies(body_name)[0][0]
     goal_heading_b = env.command_manager.get_command(command_name)[:, 2] # body heading command
     return torch.exp(-torch.square(goal_heading_b)/std**2)
+
+def heading_tracking_exp_l1(env: RLTaskEnv, command_name: str, body_name: str, std: float = 1.0) -> torch.Tensor:
+    """
+    Reward heading command tracking
+    """
+    # extract the used quantities (to enable type-hinting)
+    #asset: Articulation = env.scene["robot"]
+    #body_id = asset.find_bodies(body_name)[0][0]
+    goal_heading_b = env.command_manager.get_command(command_name)[:, 2] # body heading command
+    return torch.exp(-goal_heading_b.abs()/std**2)
 
 def position_goal_reached_bonus(
         env: RLTaskEnv, 

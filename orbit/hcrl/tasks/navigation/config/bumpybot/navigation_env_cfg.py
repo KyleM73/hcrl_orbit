@@ -90,7 +90,7 @@ class CommandsCfg:
     se2_pose = hcrl_mdp.TrajectoryCommandCfg(
         asset_name="robot",
         body_name="robot_link",
-        resampling_time_range=(10.0, 15.0),
+        resampling_time_range=(10.0, 10.0),
         simple_heading=True,
         normalized=False,
         threshold=0.2,
@@ -169,25 +169,23 @@ class RewardsCfg:
 
     # -- task
     goal_reached = RewTerm(
-        func=hcrl_mdp.position_goal_reached_bonus, weight=10.0,
+        func=hcrl_mdp.position_goal_reached_bonus, weight=1.0,
         params={"command_name": "se2_pose", "threshold": 0.2, "bonus": 1.0})
     pose_tracking_exp = RewTerm(
-        func=hcrl_mdp.pose_tracking_exp, weight=4.0,
-        params={"command_name": "se2_pose", "std": 4.0**0.5})
+        func=hcrl_mdp.pose_tracking_exp_l1, weight=5.0,
+        params={"command_name": "se2_pose", "std": 2.0**0.5})
     heading_tracking_exp = RewTerm(
-        func=hcrl_mdp.heading_tracking_exp, weight=1.0,
-        params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": math.pi**0.5})
+        func=hcrl_mdp.heading_tracking_exp_l1, weight=1.0,
+        params={"command_name": "se2_pose", "body_name": "dummy_revolute_yaw_link", "std": 1.5**0.5})
     # -- penalties
+    dof_prismatic_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-5e-1,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic.*"]), "threshold": 1.0},)
+    dof_revolute_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-5e-1,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_revolute.*"]), "threshold": math.pi},)
     action_l2 = RewTerm(func=mdp.action_l2, weight=-5e-3)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-5e-3)
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5e-5)
-    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    dof_prismatic_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic.*"]), "threshold": 1.0},
-    )
-    dof_revolute_vel = RewTerm(func=hcrl_mdp.joint_velocity_limit, weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_revolute.*"]), "threshold": math.pi},
-    )
+    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-5e-7)
 
 @configclass
 class TerminationsCfg:

@@ -45,8 +45,8 @@ class BumpybotFlatEnvCfg(LocomotionNavigationFlatEnvCfg):
         self.scene.contactf_forces = None
 
         # reduce action scale
-        self.actions.velocity.scale = (0.5,0.5,0.5)
-        self.actions.velocity.offset = (0.0,0.0,0.0)
+        self.actions.velocity.scale = (0.0,0.0,0.0)
+        self.actions.velocity.offset = (1.0,0.0,0.0)
 
 @configclass
 class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):
