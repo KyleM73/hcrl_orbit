@@ -5,7 +5,7 @@ from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg
-from omni.isaac.orbit.envs import RLTaskEnvCfg
+from omni.isaac.orbit.envs import RLTaskEnvCfg, ViewerCfg
 from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.orbit.managers import ObservationGroupCfg as ObsGroup
 from omni.isaac.orbit.managers import ObservationTermCfg as ObsTerm
@@ -39,7 +39,7 @@ class BumpybotFlatEnvCfg(LocomotionNavigationFlatEnvCfg):
         super().__post_init__()
 
         self.scene.robot = BUMPYBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        #self.scene.ground = HOSPITAL_CFG.replace(prim_path="{ENV_REGEX_NS}/Scene")
+        self.scene.terrain = HOSPITAL_CFG.replace(prim_path="{ENV_REGEX_NS}/ground")
 
         # turn off contact sensors
         self.scene.contactf_forces = None
@@ -68,3 +68,4 @@ class BumpybotFlatEnvCfg_PLAY(BumpybotFlatEnvCfg):
         # viewer settings
         #self.viewer.eye = (-4.0, 0.0, 2.5)
         #self.viewer.lookat = (0.0, 0.0, 0.0)
+        self.viewer = ViewerCfg(eye=(10.0, 0.5, 2.5), origin_type="asset_root", asset_name="robot")

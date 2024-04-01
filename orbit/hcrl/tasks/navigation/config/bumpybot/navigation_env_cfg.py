@@ -97,7 +97,7 @@ class CommandsCfg:
         ranges=hcrl_mdp.TrajectoryCommandCfg.Ranges(
             pos_x=(1.0, 5.0), pos_y=(1.0, 5.0), heading=(-0.0, 0.0) #heading unused if simple_heading==True
         ),
-        debug_vis=True,
+        debug_vis=False,
     )
 
 @configclass
@@ -210,7 +210,6 @@ class LocomotionNavigationFlatEnvCfg(RLTaskEnvCfg):
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5.0, replicate_physics=True)
     viewer: ViewerCfg = ViewerCfg(eye=(7.5, 7.5, 7.5), origin_type="world")
-    #viewer: ViewerCfg = ViewerCfg(eye=(7.5, 7.5, 7.5), origin_type="asset_root", asset_name="robot")
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
