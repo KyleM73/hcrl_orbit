@@ -113,8 +113,8 @@ def main():
                 visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.2, 0.2)),
             ),
             "true": sim_utils.SphereCfg(
-                radius=0.1,
-                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 0.0)),
+                radius=0.3,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
             ),
         }
     )
@@ -130,10 +130,15 @@ def main():
             pts = samples[:, :, :3, 0]
             pts[:, :, 2] = 0.2
             pts = pts.flatten(0, 1)
-            #marker_indices = [0] * pts.size(0)
+            x = state[:, :3, 0]
+            x[:, 2] = 0.3
+            pts = torch.cat((pts, x.view(-1, 3)), dim=0)
+            marker_indices = [0] * pts.size(0) + [1] * 1
             marker.visualize(translations=pts) #marker_indices=marker_indices
             # env stepping
-            obs, _, _, _ = env.step(torch.zeros(1, 2, device=env.unwrapped.device))
+            state, actions, samples = policy(obs)
+            obs, _, _, _ = env.step(actions)
+            #obs, _, _, _ = env.step(torch.zeros(1, 2, device=env.unwrapped.device))
             env.unwrapped.render()
         if not step % 50: print("Step {}/{}...".format(step, args_cli.video_length))
         if step >= args_cli.video_length: break
