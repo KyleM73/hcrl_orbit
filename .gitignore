@@ -3,3 +3,6 @@
 
 # HCRL robots
 **/resources/hcrl_robots/
+
+# Logs
+**.mp4
