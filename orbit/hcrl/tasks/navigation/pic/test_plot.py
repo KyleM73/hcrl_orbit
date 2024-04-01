@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from pic2 import PathIntegralController
+from pic import PathIntegralController
 
 def fit_to_grid(x, border_radius=3):
     return int(x * 10) + int(border_radius * 10)
@@ -57,7 +57,7 @@ def test_plot():
     print("Error: ",torch.norm(x[:, :2]))
 
     ani = animation.ArtistAnimation(fig, image_list, interval=100, blit=True)
-    ani.save("movie_eta1.mp4")
+    ani.save("movie.mp4")
 
 if __name__ == "__main__":
     test_plot()

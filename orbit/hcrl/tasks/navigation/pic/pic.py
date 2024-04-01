@@ -24,7 +24,7 @@ class PathIntegralController:
 
         # tuning parameters
         self.s2 = 0.01
-        self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.0001, 2.0, 0.1
+        self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.0001, 2.0, 1.0
         self.lambd = self.a * self.s2
         self.k1 = -self.e / self.T
         self.k2, self.k3 = self.k1, self.k1
