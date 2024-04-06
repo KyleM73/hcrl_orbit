@@ -1,5 +1,7 @@
 import torch
 
+import sys
+sys.path.append("..")
 from pic import PathIntegralController
 
 def test_collision_check():
