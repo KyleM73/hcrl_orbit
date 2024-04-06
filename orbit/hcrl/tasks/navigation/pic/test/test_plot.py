@@ -59,7 +59,6 @@ def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
             image[x_max, y_range, 1] = 1
         image_list.append([ax.imshow(np.flip(image.numpy(), axis=0), animated=True)])
         if collision_flag < 0.9:
-            print("collision")
             break
         print(i,"/",int(T/dt)-1)
     print("Final State: ",x[0, ...])
