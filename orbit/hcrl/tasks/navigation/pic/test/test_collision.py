@@ -15,7 +15,7 @@ def test_collision_check():
         0, 0, 0,   # lin vel
         0, 0, 0,   # ang vel
         2, 2, 0,   # box pose
-    ]).view(1, -1).to(dtype=torch.float64, device=device)
+    ]).view(1, -1).to(dtype=torch.float32, device=device)
     policy = PathIntegralController(obs, dt, T, num_samples, border_radius, box_radius, device=device)
 
     # test no collision
