@@ -59,6 +59,7 @@ def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
             image[x_max, y_range, 1] = 1
         image_list.append([ax.imshow(np.flip(image.numpy(), axis=0), animated=True)])
         if collision_flag < 0.9:
+            print("Collision!")
             break
         print(i,"/",int(T/dt)-1)
     print("Final State: ",x[0, ...])
@@ -66,7 +67,7 @@ def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
 
     ani = animation.ArtistAnimation(fig, image_list, interval=100, blit=True)
     ani.save(file_path)
-    print("movie saved to ",file_path,"\n")
+    print("Movie saved to ",file_path,"\n")
 
 def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_scale: int = 20):
     # parameters for all tests
@@ -100,7 +101,6 @@ def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_sca
             x_grid_idx = x_grid[:, 0], x_grid[:, 1]
             traj_hist.append(x_grid_idx)
             if collision_flag < 0.9:
-                print("collision")
                 failures += 1
                 break
         color = 2 if collision_flag > 0.9 else 0
@@ -121,10 +121,10 @@ def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_sca
         image_list.append([ax.imshow(np.flip(image.numpy(), axis=0), animated=True)])
         image_init = image
         print(k,"/",num_trials-1)
-    print("success rate: ",failures/num_trials)
+    print("Success rate: ",1 - failures/num_trials)
     ani = animation.ArtistAnimation(fig, image_list, interval=100, blit=True)
     ani.save(file_path)
-    print("movie saved to ",file_path,"\n")
+    print("Movie saved to ",file_path,"\n")
 
 if __name__ == "__main__":
     dir = os.path.dirname(__file__)
