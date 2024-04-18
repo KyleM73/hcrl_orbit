@@ -35,7 +35,7 @@ class PathIntegralController:
         self.reset(obs)
 
     def __call__(self, obs: torch.Tensor) -> Tuple[torch.Tensor]:
-        assert self.step != self.num_steps+1
+        assert self.step != self.num_steps
 
         self.x_sampled[self.step] = self.x
         self.S_tau[:] = 0
@@ -60,9 +60,11 @@ class PathIntegralController:
         noisy_control = torch.einsum("ij,jk->ik", self.G_u, u * self.dt + self.s * self.eps[self.step] * self.dt**0.5)
         self.x = self.x + self.f(self.x) * self.dt + noisy_control
 
+        action = torch.tensor([u[0] * self.dt, u[1]])
+
         self.step += 1
 
-        return self.x, u, self.x_sampled[self.step-1:]
+        return self.x, action, self.x_sampled[self.step-1:]
 
     def reset(self, obs: torch.Tensor) -> None:
         self.x = self.get_state(obs) # x1, x2, v, theta
