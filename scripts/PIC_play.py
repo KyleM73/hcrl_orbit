@@ -59,6 +59,15 @@ from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg,
 if args_cli.plot:
     import matplotlib.pyplot as plt
 
+def PDcontroller(state, obs, device, P_vel=1, P_theta=1):
+    pose_d, speed_d, theta_d = state[:, :2, 0], state[:, 2, 0], state[:, 3, 0]
+    pose_diff = pose_d - obs[:, :2]
+    theta = torch.arctan2(pose_diff[:, 0], pose_diff[:, 1])
+    theta_err = theta - obs[:, 3]
+
+    action = torch.tensor([P_vel * speed_d, P_theta * theta_err], device=device).view(-1, 2)
+    return action
+
 def main():
     """Train with RSL-RL agent."""
     # parse configuration
@@ -101,9 +110,12 @@ def main():
     step = 0
 
     # obtain the policy for inference
+    obs[0, :2] = 4
+    init_pose = obs[0, :2]
+    pose = torch.zeros(1, 3, device=env.unwrapped.device)
     dt = 0.01
     T = args_cli.video_length * dt
-    policy = orbit.hcrl.tasks.navigation.pic.PathIntegralController(obs, dt, T, num_samples=10, device=env.unwrapped.device)
+    policy = orbit.hcrl.tasks.navigation.pic.PathIntegralController(obs, dt, T, num_samples=10_000, box_radius=0.5, device=env.unwrapped.device)
 
     cfg = VisualizationMarkersCfg(
         prim_path="/World/Visuals/testMarkers",
@@ -125,23 +137,38 @@ def main():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-            state, actions, samples = policy(obs)
+            #state, actions, samples = policy(obs)
+            state = torch.tensor([3.9, 3.9, 1, 3.14], device=env.unwrapped.device).view(1, 4, 1)
+            action = PDcontroller(state, obs, env.unwrapped.device, 0, 1)
+            print(action)
+            
+
+            #pose[0, :2] = state[0, :2, 0]# - init_pose
+            #print(state[:, :2, 0])
+            #print(init_pose)
+            #print(obs[:, :2])
+            #print(pose)
+            #print()
             # visualize samples
-            pts = samples[:, :, :3, 0]
-            pts[:, :, 2] = 0.2
-            pts = pts.flatten(0, 1)
-            x = state[:, :3, 0]
-            x[:, 2] = 0.3
-            pts = torch.cat((pts, x.view(-1, 3)), dim=0)
-            marker_indices = [0] * pts.size(0) + [1] * 1
-            marker.visualize(translations=pts) #marker_indices=marker_indices
+            #pts = samples[::100, ::100, :3, 0] #sample every 10th point
+            #pts[:, :, 2] = 0.2
+            #pts = pts.flatten(0, 1)
+            #x = state[:, :3, 0]
+            #x[:, 2] = 0.3
+            #pts = torch.cat((pts, x.view(-1, 3)), dim=0)
+            #marker_indices = [0] * pts.size(0) + [1] * 1
+            #marker.visualize(translations=pts) #marker_indices=marker_indices
             # env stepping
-            state, actions, samples = policy(obs)
-            obs, _, _, _ = env.step(actions)
-            #obs, _, _, _ = env.step(torch.zeros(1, 2, device=env.unwrapped.device))
+            #state, actions, samples = policy(obs)
+            #obs, _, _, _ = env.step(actions.view(1, 2))
+            #pose = torch.zeros(1, 2, device=env.unwrapped.device)
+            #pose[:, :] = -1
+            obs, _, _, _ = env.step(action)
+            print(obs[:, :3])
+            print()
             env.unwrapped.render()
         if not step % 50: print("Step {}/{}...".format(step, args_cli.video_length))
-        if step >= args_cli.video_length: break
+        if step >= args_cli.video_length-1: break
         if env.unwrapped.sim.is_stopped(): break
         step += 1
 
