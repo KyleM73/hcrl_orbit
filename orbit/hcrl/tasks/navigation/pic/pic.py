@@ -24,12 +24,12 @@ class PathIntegralController:
 
         # tuning parameters
         self.s2 = 0.01
-        self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.0001, 2.0, 1.0
+        self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.0001, 2.0, 2.0
         self.lambd = self.a * self.s2
         self.k1 = -self.e / self.T
         self.k2, self.k3 = self.k1, self.k1
         self.s = self.s2**0.5
-        self.G_u = torch.tensor([[0, 0], [0, 0], [1, 0], [0, 1]], dtype=torch.float32, device=self.device)
+        self.G_u = torch.tensor([[0, 0], [0, 0], [1, 0], [0, 1]], dtype=torch.float64, device=self.device)
 
         # tracking objects
         self.reset(obs)
@@ -41,7 +41,7 @@ class PathIntegralController:
         self.S_tau[:] = 0
         self.collision_flag[:] = 1.0
         sample_ids = torch.argwhere(self.collision_flag)[:, 0]
-        self.eps_sampled = torch.randn(self.num_steps-self.step, self.num_samples, 2, 1, dtype=torch.float32, device=self.device)
+        self.eps_sampled = torch.randn(self.num_steps-self.step, self.num_samples, 2, 1, dtype=torch.float64, device=self.device)
         
         for i in range(self.step, self.num_steps):
             self.S_tau[sample_ids] += self.dt * self.b * torch.square(torch.norm(self.x_sampled[i, sample_ids, :2], dim=1))
@@ -68,12 +68,12 @@ class PathIntegralController:
 
     def reset(self, obs: torch.Tensor) -> None:
         self.x = self.get_state(obs) # x1, x2, v, theta
-        self.eps = torch.randn(self.num_steps+1, 2, 1, dtype=torch.float32, device=self.device)
-        self.x_sampled = torch.zeros(self.num_steps+1, self.num_samples, 4, 1, dtype=torch.float32, device=self.device)
-        self.f_const = torch.diag(torch.tensor([self.k1, self.k1, self.k2, self.k3], dtype=torch.float32, device=self.device))
-        self.eps_sampled = torch.randn(self.num_steps+1, self.num_samples, 2, 1, dtype=torch.float32, device=self.device)
-        self.S_tau = torch.zeros(self.num_samples, 1, dtype=torch.float32, device=self.device)
-        self.collision_flag = torch.ones(self.num_samples, 1, dtype=torch.float32, device=self.device)
+        self.eps = torch.randn(self.num_steps+1, 2, 1, dtype=torch.float64, device=self.device)
+        self.x_sampled = torch.zeros(self.num_steps+1, self.num_samples, 4, 1, dtype=torch.float64, device=self.device)
+        self.f_const = torch.diag(torch.tensor([self.k1, self.k1, self.k2, self.k3], dtype=torch.float64, device=self.device))
+        self.eps_sampled = torch.randn(self.num_steps+1, self.num_samples, 2, 1, dtype=torch.float64, device=self.device)
+        self.S_tau = torch.zeros(self.num_samples, 1, dtype=torch.float64, device=self.device)
+        self.collision_flag = torch.ones(self.num_samples, 1, dtype=torch.float64, device=self.device)
         self.step = 0
 
     def f(self, x: torch.Tensor) -> torch.Tensor:
@@ -84,7 +84,7 @@ class PathIntegralController:
 
     def get_state(self, obs: torch.Tensor) -> torch.Tensor:
         # [x, y, s, theta]
-        return torch.tensor([[obs[:, 0]], [obs[:, 1]], [obs[:, 4:6].norm(dim=1)], [obs[:, 3]]], dtype=torch.float32, device=self.device).view(-1, 4, 1)
+        return torch.tensor([[obs[:, 0]], [obs[:, 1]], [obs[:, 4:6].norm(dim=1)], [obs[:, 3]]], dtype=torch.float64, device=self.device).view(-1, 4, 1)
     
     def get_box_points(self, obs: torch.Tensor) -> List[torch.Tensor]:
         assert obs.size(1) > 10
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         0, 0, 0,   # ang vel
         #2, 2, 0,   # box pose
         -2, -2, 0, # box pose
-    ]).view(1, -1).to(dtype=torch.float32, device=device)
+    ]).view(1, -1).to(dtype=torch.float64, device=device)
     dt, T = 0.1, 10
     num_samples = 10000
 
