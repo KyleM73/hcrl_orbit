@@ -33,7 +33,7 @@ import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import BUMPYBOT_CFG, BUMPYBOT_POSE_CFG, CUBE_CFG  # isort: skip
+from orbit.hcrl.assets import BUMPYBOT_CFG, CUBE_CFG  # isort: skip
 
 ##
 # Scene definition
@@ -85,13 +85,13 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    velocity = mdp.NonHolonomicActionCfg(
+    velocity = hcrl_mdp.HolonomicActionCfg(
         asset_name="robot",
         x_joint_name=["dummy_prismatic_x_joint"],
         y_joint_name=["dummy_prismatic_y_joint"],
         yaw_joint_name=["dummy_revolute_yaw_joint"],
         body_name=["robot_link"],
-        scale=(0.0, 0.0), offset=(0.0, 0.0),
+        scale=(1.0, 0.0, 1.0), offset=(0.0, 0.0, 0.0),
     )
 
     """pose = mdp.JointPositionActionCfg(
@@ -110,10 +110,10 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        #base_pose = ObsTerm(func=hcrl_mdp.body_pos_w, 
-        #    params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
-        base_pose = ObsTerm(func=mdp.joint_pos_rel,
-            params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic_x_joint", "dummy_prismatic_y_joint", "dummy_revolute_yaw_joint"])})
+        base_pose = ObsTerm(func=hcrl_mdp.body_pos_w, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
+        #base_pose = ObsTerm(func=mdp.joint_pos_rel,
+        #    params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic_x_joint", "dummy_prismatic_y_joint", "dummy_revolute_yaw_joint"])})
         base_heading = ObsTerm(func=hcrl_mdp.body_heading_w, 
             params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
         base_lin_vel = ObsTerm(func=hcrl_mdp.body_lin_vel_w, 
@@ -123,7 +123,7 @@ class ObservationsCfg:
         box_pose = ObsTerm(func=hcrl_mdp.root_pos_w, params={"asset_cfg": SceneEntityCfg("box")})
 
         def __post_init__(self):
-            self.enable_corruption = True
+            self.enable_corruption = False
             self.concatenate_terms = True
 
     # observation groups
@@ -139,50 +139,16 @@ class EventsCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "yaw": (0.0, 0.0)},
+            "pose_range": {"x": (5.0, 5.0), "y": (5.0, 5.0), "yaw": (-0.0, 0.0)},
             "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0.0, 0.0)},
         },
     )
-    reset_x = EventTerm(
-        func=mdp.reset_joints_within_range,
-        mode="reset",
-        params={
-            "position_range": {
-                "dummy_prismatic_x_joint": (4.0, 4.0),
-                "dummy_prismatic_y_joint": (4.0, 4.0),
-                "dummy_revolute_yaw_joint": (3.14, 3.14),
-                },
-            "velocity_range": {".*": (0.0, 0.0)},
-            "use_default_offset": True,
-            "asset_cfg": SceneEntityCfg("robot"),
-        }
-    )
-
-    """reset_y = EventTerm(
-        func=mdp.reset_joints_by_offset,
-        mode="reset",
-        params={
-            "position_range": (-2.0, 2.0),
-            "velocity_range": (0.0, 0.0),
-            "asset_cfg": SceneEntityCfg("robot", joint_names="dummy_prismatic_y_joint"),
-        }
-    )
-
-    reset_yaw = EventTerm(
-        func=mdp.reset_joints_by_offset,
-        mode="reset",
-        params={
-            "position_range": (0.0, 0.0),
-            "velocity_range": (0.0, 0.0),
-            "asset_cfg": SceneEntityCfg("robot", joint_names="dummy_revolute_yaw_joint"),
-        }
-    )"""
 
     reset_box = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-2.0, -2.0), "y": (-2.0, -2.0), "z": (0.0, 0.0)},
+            "pose_range": {"x": (2.0, 2.0), "y": (2.0, 2.0), "z": (0.0, 0.0)},
             "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
             "asset_cfg": SceneEntityCfg("box")
         },
@@ -217,8 +183,7 @@ class PICEnvCfg(RLTaskEnvCfg):
 
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
-    viewer: ViewerCfg = ViewerCfg(eye=(-5, -5, 5), origin_type="world")
-    #viewer: ViewerCfg = ViewerCfg(eye=(7.5, 7.5, 7.5), origin_type="asset_root", asset_name="robot")
+    viewer: ViewerCfg = ViewerCfg(eye=(7.5, -7.5, 7.5), origin_type="world")
     # MDP settings
     events: EventsCfg = EventsCfg()
     observations: ObservationsCfg = ObservationsCfg()
@@ -232,7 +197,7 @@ class PICEnvCfg(RLTaskEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 5
-        self.episode_length_s = 10.0
+        self.episode_length_s = 60.0
         # simulation settings
         self.sim.dt = 0.002
         self.sim.disable_contact_processing = True
