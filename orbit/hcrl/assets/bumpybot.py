@@ -22,7 +22,7 @@ from orbit.hcrl import EXT_DIR
 
 BUMPYBOT_CFG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
-        fix_base=False,
+        fix_base=True,
         merge_fixed_joints=False,
         make_instanceable=True,
         force_usd_conversion=True,
@@ -49,7 +49,7 @@ BUMPYBOT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.343),
-        joint_pos={"dummy_prismatic.*" : 0.000, "dummy_revolute.*" : 0.000},
+        joint_pos={"dummy_prismatic.*" : 0.000, "dummy_revolute.*" : 3.141},
         joint_vel={"dummy_prismatic.*" : 0.000, "dummy_revolute.*" : 0.000},
     ),
     soft_joint_pos_limit_factor=1.0,
