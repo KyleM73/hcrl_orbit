@@ -25,8 +25,8 @@ class HolonomicAction(ActionTerm):
 
     .. math::
 
-        \dot{q}_{0, des} &= v_{B,x} \cos(\theta) + v_{B,y} \cos(\theta) \\
-        \dot{q}_{1, des} &= v_{B,x} \sin(\theta) - v_{B,y} \sin(\theta) \\
+        \dot{q}_{0, des} &= v_{B,x} \cos(\theta) + v_{B,y} \sin(\theta) \\
+        \dot{q}_{1, des} &= v_{B,x} \sin(\theta) + v_{B,y} \cos(\theta) \\
         \dot{q}_{2, des} &= \omega_{B,z}
 
     where :math:`\theta` is the yaw of the 2-D base. Since the base is simulated as a dummy joint, the yaw is directly
@@ -133,8 +133,8 @@ class HolonomicAction(ActionTerm):
         quat_w = self._asset.data.body_quat_w[:, self._body_idx].squeeze(1)
         yaw_w = euler_xyz_from_quat(quat_w)[2]
         # compute joint velocities targets
-        self._joint_vel_command[:, 0] = torch.cos(yaw_w) * (self.processed_actions[:, 0] + self.processed_actions[:, 1])  # x
-        self._joint_vel_command[:, 1] = torch.sin(yaw_w) * (self.processed_actions[:, 0] - self.processed_actions[:, 1])  # y
+        self._joint_vel_command[:, 0] = torch.cos(yaw_w) * self.processed_actions[:, 0] + torch.sin(yaw_w) * self.processed_actions[:, 1]  # x
+        self._joint_vel_command[:, 1] = torch.sin(yaw_w) * self.processed_actions[:, 0] + torch.cos(yaw_w) * self.processed_actions[:, 1]  # y
         self._joint_vel_command[:, 2] = self.processed_actions[:, 2]  # yaw
         # set the joint velocity targets
         self._asset.set_joint_velocity_target(self._joint_vel_command, joint_ids=self._joint_ids)
