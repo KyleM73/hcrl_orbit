@@ -118,7 +118,7 @@ def main():
     dt = 0.1
     decimation = int(dt / env.unwrapped.step_dt)
     T = args_cli.video_length * dt / decimation
-    box_radius = 0.5/2 + 0.3 #c-space
+    box_radius = 0.5/2 + 0.4 #c-space
     policy = orbit.hcrl.tasks.navigation.pic.PathIntegralController(obs, dt, T, num_samples=10_000, box_radius=box_radius, device=env.unwrapped.device)
 
     cfg = VisualizationMarkersCfg(
@@ -166,7 +166,7 @@ def main():
             # agent stepping
             state, _, samples = policy(obs)
             # visualize samples
-            sample_pts = samples[:, ::100, :3, 0] #sample every 500th trajectory
+            sample_pts = samples[:, ::100, :3, 0] #sample every 100th trajectory
             sample_pts = sample_pts.flatten(0, 1)
             #print(sample_pts.size())
             traj_pts = torch.cat((traj_pts, obs[:, :3]), dim=0)
