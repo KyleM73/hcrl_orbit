@@ -183,7 +183,8 @@ class PICEnvCfg(RLTaskEnvCfg):
 
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
-    viewer: ViewerCfg = ViewerCfg(eye=(7.5, -7.5, 7.5), origin_type="world")
+    viewer: ViewerCfg = ViewerCfg(eye=(7.5, -7.5, 7.5), origin_type="world") # side
+    #viewer: ViewerCfg = ViewerCfg(eye=(0.0, 0.0, 20.0), origin_type="world") # top down
     # MDP settings
     events: EventsCfg = EventsCfg()
     observations: ObservationsCfg = ObservationsCfg()
