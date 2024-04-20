@@ -16,17 +16,20 @@ def fit_to_grid_vec(x, border_radius=3, s=10):
 
 def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
      # parameters for all tests
-    dt, T = 0.1, 10
+    dt, T = 0.1, 20
     num_samples = 10000
-    border_radius = 4
-    box_radius = 0.5
+    border_radius = 6#4
+    box_radius = 0.5/2 + 0.3#0.5
     device = "cpu"
     obs = torch.tensor([
-        3, 3, 0,   # pose
+        #3, 3, 0,   # pose
+        5, 5, 0,   # pose
         0,         # heading
         0, 0, 0,   # lin vel
         0, 0, 0,   # ang vel
-        1.5, 1.5, 0,   # box pose
+        #1.5, 1.5, 0,   # box pose
+        2, 2, 0,   # box pose
+        -2, 2, 0,   # box pose
     ]).view(1, -1).to(dtype=torch.float32, device=device)
     policy = PathIntegralController(obs, dt, T, num_samples, border_radius, box_radius, device=device)
 
@@ -73,15 +76,15 @@ def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_sca
     # parameters for all tests
     dt, T = 0.1, 10
     num_samples = 10000
-    border_radius = 4
-    box_radius = 0.5
+    border_radius = 6
+    box_radius = 0.5/2 + 0.3#0.5
     device = "cpu"
     obs = torch.tensor([
-        3, 3, 0,   # pose
+        5, 5, 0,   # pose
         0,         # heading
         0, 0, 0,   # lin vel
         0, 0, 0,   # ang vel
-        1.5, 1.5, 0,   # box pose
+        2, 2, 0,   # box pose
     ]).view(1, -1).to(dtype=torch.float32, device=device)
 
     fig, ax = plt.subplots()
@@ -129,5 +132,5 @@ def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_sca
 if __name__ == "__main__":
     dir = os.path.dirname(__file__)
     test_single_plot(dir+"/test_single.mp4", 20)
-    test_multi_plot(100, dir+"/test_multi.mp4", 20)
+    #test_multi_plot(100, dir+"/test_multi.mp4", 20)
 
