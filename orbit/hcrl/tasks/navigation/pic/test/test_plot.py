@@ -12,26 +12,28 @@ def fit_to_grid(x, border_radius=3, s=10):
     return int(x * s) + int(border_radius * s)
 
 def fit_to_grid_vec(x, border_radius=3, s=10):
-    return (s * x).to(int) + int(border_radius * s)
+    return torch.clamp((s * x).to(int) + int(border_radius * s), 0, int(2 * border_radius * s))
 
 def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
      # parameters for all tests
-    dt, T = 0.1, 20
-    num_samples = 10000
-    border_radius = 6#4
-    box_radius = 0.5/2 + 0.3#0.5
+    dt, T = 0.1, 10
+    num_samples = 10**4
+    border_radius = 0.5#4
+    #box_radius = 0.5/2 + 0.3#0.5
+    #box_radii = [[box_radius,box_radius],[box_radius-0.1,box_radius+0.2]]
+    box_radii = [[0.075, 0.05],[0.075, 0.1]]
     device = "cpu"
     obs = torch.tensor([
         #3, 3, 0,   # pose
-        5, 5, 0,   # pose
+        -0.4, -0.4, 0,   # pose
         0,         # heading
         0, 0, 0,   # lin vel
         0, 0, 0,   # ang vel
         #1.5, 1.5, 0,   # box pose
-        2, 2, 0,   # box pose
-        -2, 2, 0,   # box pose
+        -0.325, -0.25, 0,   # box pose
+        -0.075, -0.2, 0,   # box pose
     ]).view(1, -1).to(dtype=torch.float32, device=device)
-    policy = PathIntegralController(obs, dt, T, num_samples, border_radius, box_radius, device=device)
+    policy = PathIntegralController(obs, dt, T, num_samples, border_radius, box_radii, device=device)
 
     fig, ax = plt.subplots()
     ax.axis("off")
@@ -39,7 +41,7 @@ def test_single_plot(file_path: str = "test_single.mp4", grid_scale: int = 20):
     traj_hist = []
     collision_flag = 1.0
     for i in range(int(T/dt)-1):
-        image = torch.zeros(2*border_radius*grid_scale+1, 2*border_radius*grid_scale+1, 3)
+        image = torch.zeros(int(2*border_radius*grid_scale+1), int(2*border_radius*grid_scale+1), 3)
         x, v_cmd, samples = policy(obs)
         collision_flag = policy.check_collision(obs, x[:, 0, :], x[:, 1, :], collision_flag)
         sample_grid = fit_to_grid_vec(samples, border_radius, grid_scale)
@@ -131,6 +133,6 @@ def test_multi_plot(num_trials: int, file_path: str = "test_multi.mp4", grid_sca
 
 if __name__ == "__main__":
     dir = os.path.dirname(__file__)
-    test_single_plot(dir+"/test_single.mp4", 20)
+    test_single_plot(dir+"/test_single.mp4", 200)
     #test_multi_plot(100, dir+"/test_multi.mp4", 20)
 

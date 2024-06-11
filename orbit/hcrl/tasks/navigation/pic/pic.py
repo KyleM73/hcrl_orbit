@@ -10,8 +10,10 @@ class PathIntegralController:
                  T: float,
                  num_samples: int, 
                  border_radius: float = 5.0,
-                 box_radius: float = 0.5,
+                 box_radius: List[List[float]] | float = 0.5,
+                 c_space_offset: float = 0.0,
                  device: str = "cpu",
+                 model: str = "unicycle",
                  ) -> None:
         # simulation parameters
         self.dt = dt
@@ -20,16 +22,62 @@ class PathIntegralController:
         self.num_samples = num_samples
         self.border_radius = border_radius
         self.box_radius = box_radius
+        self.c_space_offset = c_space_offset
+        if isinstance(self.box_radius, float): self.box_radius += self.c_space_offset
+        elif isinstance(self.box_radius, list): self.box_radius = [[it + self.c_space_offset for it in item] for item in self.box_radius]
         self.device = device
 
-        # tuning parameters
-        self.s2 = 0.01
-        self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.0001, 2.0, 2.0
-        self.lambd = self.a * self.s2
-        self.k1 = -self.e / self.T
-        self.k2, self.k3 = self.k1, self.k1
-        self.s = self.s2**0.5
-        self.G_u = torch.tensor([[0, 0], [0, 0], [1, 0], [0, 1]], dtype=torch.float64, device=self.device)
+        if model == "unicycle":
+            self.n = 4
+            # tuning parameters
+            self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.02, 1.0, 1000.0
+            #self.a, self.b, self.d, self.e, self.eta = 1.0, 1.0, 1.0, 2.0, 0.9
+            self.s2 = 0.01*2
+
+            self.lambd = self.a * self.s2
+            self.k1 = -self.e / self.T
+            self.k2, self.k3 = self.k1, self.k1
+            self.s = self.s2**0.5
+            self.G_u = torch.tensor([[0, 0], [0, 0], [1, 0], [0, 1]], dtype=torch.float64, device=self.device)
+
+            self.f_const = torch.diag(torch.tensor([self.k1, self.k1, self.k2, self.k3], dtype=torch.float64, device=self.device))
+            self.f = self.f_unicycle
+            self.get_state = self.get_state_unicycle
+        elif model == "integrator":
+            self.n = 2
+            # tuning parameters
+            #self.a, self.b, self.d, self.e, self.eta = 1.0, 1.0, 100.0, 5.0, 10.0
+            self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.02, 1.0, 100000.0
+            self.s2 = 0.01*5
+
+            self.lambd = self.a * self.s2
+            self.k1 = -self.e / self.T
+            self.s = self.s2**0.5
+            self.G_u = torch.tensor([[1, 0], [0, 1]], dtype=torch.float64, device=self.device)
+
+            self.f_const = torch.diag(torch.tensor([self.k1, self.k1], dtype=torch.float64, device=self.device))
+            self.f = self.f_integrator
+            self.get_state = self.get_state_integrator
+        elif model == "car":
+            self.n = 5
+            self.L = 0.5
+            # tuning parameters
+            self.a, self.b, self.d, self.e, self.eta = 1.0, 0.0001, 0.02, 1.0, 1000.0
+            self.s2 = 0.01*2
+            #self.a, self.b, self.d, self.e, self.eta = 1.0, 1.0, 1.0, 2.0, 1.2
+            #self.s2 = 0.0049
+
+            self.lambd = self.a * self.s2
+            self.k1 = -self.e / self.T
+            self.k2, self.k3, self.k4 = self.k1, self.k1, self.k1
+            self.s = self.s2**0.5
+            self.G_u = torch.tensor([[0, 0], [0, 0], [1, 0], [0, 0], [0, 1]], dtype=torch.float64, device=self.device)
+
+            self.f_const = torch.diag(torch.tensor([self.k1, self.k1, self.k2, self.k3, self.k4], dtype=torch.float64, device=self.device))
+            self.f = self.f_car
+            self.get_state = self.get_state_car
+        else:
+            assert False
 
         # tracking objects
         self.reset(obs)
@@ -52,7 +100,7 @@ class PathIntegralController:
             sample_ids = torch.argwhere(self.collision_flag)[:, 0]
         self.S_tau[sample_ids] += self.d * torch.square(torch.norm(self.x_sampled[self.num_steps, sample_ids, :2], dim=1))
 
-        denom_i = torch.exp(-self.S_tau / self.lambd) #+ 1e-5 # avoid divide by zero for very large costs
+        denom_i = torch.exp(-self.S_tau / self.lambd) + 1e-9 # avoid divide by zero for very large costs
         numer = torch.einsum("ijk,ik->jk",self.eps_sampled[0], denom_i)
         denom = torch.sum(denom_i)
 
@@ -69,30 +117,66 @@ class PathIntegralController:
     def reset(self, obs: torch.Tensor) -> None:
         self.x = self.get_state(obs) # x1, x2, v, theta
         self.eps = torch.randn(self.num_steps+1, 2, 1, dtype=torch.float64, device=self.device)
-        self.x_sampled = torch.zeros(self.num_steps+1, self.num_samples, 4, 1, dtype=torch.float64, device=self.device)
-        self.f_const = torch.diag(torch.tensor([self.k1, self.k1, self.k2, self.k3], dtype=torch.float64, device=self.device))
+        self.x_sampled = torch.zeros(self.num_steps+1, self.num_samples, self.n, 1, dtype=torch.float64, device=self.device)
         self.eps_sampled = torch.randn(self.num_steps+1, self.num_samples, 2, 1, dtype=torch.float64, device=self.device)
         self.S_tau = torch.zeros(self.num_samples, 1, dtype=torch.float64, device=self.device)
         self.collision_flag = torch.ones(self.num_samples, 1, dtype=torch.float64, device=self.device)
         self.step = 0
 
-    def f(self, x: torch.Tensor) -> torch.Tensor:
-        f_non_lin = torch.zeros_like(self.f_const.expand(x.size(0), 4, 4))
+    def f_unicycle(self, x: torch.Tensor) -> torch.Tensor:
+        f_non_lin = torch.zeros_like(self.f_const.expand(x.size(0), self.n, self.n))
         f_non_lin[:, 0, 2], f_non_lin[:, 1, 2] = torch.cos(x[..., 3, :]).squeeze(), torch.sin(x[..., 3, :]).squeeze()
         f_full = self.f_const + f_non_lin
         return torch.einsum("aij,ajk->aik", f_full, x)
 
-    def get_state(self, obs: torch.Tensor) -> torch.Tensor:
+    def f_integrator(self, x: torch.Tensor) -> torch.Tensor:
+        f_non_lin = torch.zeros_like(self.f_const.expand(x.size(0), self.n, self.n))
+        f_full = self.f_const + f_non_lin
+        return torch.einsum("aij,ajk->aik", f_full, x)
+
+    def f_car(self, x: torch.Tensor) -> torch.Tensor:
+        f_non_lin = torch.zeros_like(self.f_const.expand(x.size(0), self.n, self.n))
+        f_non_lin[:, 0, 2], f_non_lin[:, 1, 2] = torch.cos(x[..., 3, :]).squeeze(), torch.sin(x[..., 3, :]).squeeze()
+        f_non_lin[:, 3, 2] = torch.tan(x[..., 4, :]).squeeze() / self.L
+        f_full = self.f_const + f_non_lin
+        return torch.einsum("aij,ajk->aik", f_full, x)
+
+    def get_state_unicycle(self, obs: torch.Tensor) -> torch.Tensor:
         # [x, y, s, theta]
-        return torch.tensor([[obs[:, 0]], [obs[:, 1]], [obs[:, 4:6].norm(dim=1)], [obs[:, 3]]], dtype=torch.float64, device=self.device).view(-1, 4, 1)
+        return torch.tensor([
+            [obs[:, 0]],
+            [obs[:, 1]],
+            [obs[:, 4:6].norm(dim=1)],
+            [obs[:, 3]]
+            ], dtype=torch.float64, device=self.device).view(-1, self.n, 1)
+
+    def get_state_integrator(self, obs: torch.Tensor) -> torch.Tensor:
+        # [x, y]
+        return torch.tensor([
+            [obs[:, 0]],
+            [obs[:, 1]],
+            ], dtype=torch.float64, device=self.device).view(-1, self.n, 1)
+
+    def get_state_car(self, obs: torch.Tensor) -> torch.Tensor:
+        # [x, y, s, theta, phi]
+        return torch.tensor([
+            [obs[:, 0]],
+            [obs[:, 1]],
+            [obs[:, 4:6].norm(dim=1)],
+            [obs[:, 3]],
+            [torch.zeros_like(obs[:, 0])]
+            ], dtype=torch.float64, device=self.device).view(-1, self.n, 1)
+
     
     def get_box_points(self, obs: torch.Tensor) -> List[torch.Tensor]:
         assert obs.size(1) > 10
-
         box_poses = obs[:, 10:]
-        box_coords = [[[box_poses[:, 3*i:3*i+2] + torch.tensor([[j, k]], device=self.device) 
-                        for k in [-self.box_radius, self.box_radius]]
-                    for j in [-self.box_radius, self.box_radius]] 
+        if isinstance(self.box_radius, float):
+            self.box_radius = [[self.box_radius],[self.box_radius]] * box_poses.size(1) // 3
+        assert len(self.box_radius) == box_poses.size(1) // 3
+        box_coords = [[[box_poses[:, 3*i:3*i+2] + torch.tensor([[j, k]], device=self.device)
+                        for k in [-self.box_radius[i][1], self.box_radius[i][1]]]
+                    for j in [-self.box_radius[i][0], self.box_radius[i][0]]] 
                 for i in range(box_poses.size(1) // 3)]
         return [[*box_coords[i][0], *box_coords[i][1]] for i in range(len(box_coords))]
     

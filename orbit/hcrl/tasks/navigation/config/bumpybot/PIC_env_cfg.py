@@ -33,7 +33,10 @@ import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import BUMPYBOT_CFG, CUBE_CFG  # isort: skip
+from orbit.hcrl.assets import (
+    BUMPYBOT_CFG, CUBE_CFG, CUBE0_CFG, CUBE1_CFG, CUBE2_CFG, CUBE3_CFG,
+    CAR_CFG, SPHERE_CFG, UNICYCLE_CFG
+  )  # isort: skip
 
 ##
 # Scene definition
@@ -41,7 +44,7 @@ from orbit.hcrl.assets import BUMPYBOT_CFG, CUBE_CFG  # isort: skip
 
 
 @configclass
-class MySceneCfg(InteractiveSceneCfg):
+class UnicycleSceneCfg(InteractiveSceneCfg):
     """Configuration for the terrain scene with a legged robot."""
 
     # ground terrain
@@ -65,9 +68,10 @@ class MySceneCfg(InteractiveSceneCfg):
         debug_vis=True,
     )
     # robots
-    robot: ArticulationCfg = BUMPYBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot: ArticulationCfg = UNICYCLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
     # objects
-    box: RigidObjectCfg = CUBE_CFG.replace(prim_path="{ENV_REGEX_NS}/Box")
+    box0: RigidObjectCfg = CUBE0_CFG.replace(prim_path="{ENV_REGEX_NS}/Box0")
+    box1: RigidObjectCfg = CUBE1_CFG.replace(prim_path="{ENV_REGEX_NS}/Box1")
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -77,6 +81,20 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="/World/skyLight",
         spawn=sim_utils.DomeLightCfg(color=(0.13, 0.13, 0.13), intensity=1000.0),
     )
+
+@configclass
+class IntegratorSceneCfg(UnicycleSceneCfg):
+    # robots
+    robot: ArticulationCfg = SPHERE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    box0 = CUBE2_CFG.replace(prim_path="{ENV_REGEX_NS}/Box0")
+    box1 = None
+
+@configclass
+class CarSceneCfg(UnicycleSceneCfg):
+    # robots
+    robot: ArticulationCfg = CAR_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    box0 = CUBE3_CFG.replace(prim_path="{ENV_REGEX_NS}/Box0")
+    box1 = CUBE3_CFG.replace(prim_path="{ENV_REGEX_NS}/Box1")
 
 ##
 # MDP settings
@@ -120,7 +138,8 @@ class ObservationsCfg:
             params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
         base_ang_vel = ObsTerm(func=hcrl_mdp.body_ang_vel_w, 
             params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
-        box_pose = ObsTerm(func=hcrl_mdp.root_pos_w, params={"asset_cfg": SceneEntityCfg("box")})
+        box0_pose = ObsTerm(func=hcrl_mdp.root_pos_w, params={"asset_cfg": SceneEntityCfg("box0")})
+        box1_pose = ObsTerm(func=hcrl_mdp.root_pos_w, params={"asset_cfg": SceneEntityCfg("box1")})
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -131,7 +150,35 @@ class ObservationsCfg:
 
 
 @configclass
-class EventsCfg:
+class IntegratorObservationsCfg:
+    """Observation specifications for the MDP."""
+
+    @configclass
+    class PolicyCfg(ObsGroup):
+        """Observations for policy group."""
+
+        # observation terms (order preserved)
+        base_pose = ObsTerm(func=hcrl_mdp.body_pos_w, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
+        #base_pose = ObsTerm(func=mdp.joint_pos_rel,
+        #    params={"asset_cfg": SceneEntityCfg("robot", joint_names=["dummy_prismatic_x_joint", "dummy_prismatic_y_joint", "dummy_revolute_yaw_joint"])})
+        base_heading = ObsTerm(func=hcrl_mdp.body_heading_w, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
+        base_lin_vel = ObsTerm(func=hcrl_mdp.body_lin_vel_w, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
+        base_ang_vel = ObsTerm(func=hcrl_mdp.body_ang_vel_w, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names="robot_link")})
+        box0_pose = ObsTerm(func=hcrl_mdp.root_pos_w, params={"asset_cfg": SceneEntityCfg("box0")})
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+
+    # observation groups
+    policy: PolicyCfg = PolicyCfg()
+
+@configclass
+class UnicycleEventsCfg:
     """Configuration for events."""
 
     # reset
@@ -139,18 +186,84 @@ class EventsCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (5.0, 5.0), "y": (5.0, 5.0), "yaw": (-0.0, 0.0)},
+            "pose_range": {"x": (-4, -4), "y": (-4, -4), "yaw": (-0.0, 0.0)},
             "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0.0, 0.0)},
         },
     )
 
-    reset_box = EventTerm(
+    reset_box0 = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (2.0, 2.0), "y": (2.0, 2.0), "z": (0.0, 0.0)},
+            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "z": (0.0, 0.0)},
             "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
-            "asset_cfg": SceneEntityCfg("box")
+            "asset_cfg": SceneEntityCfg("box0")
+        },
+    )
+
+    reset_box1 = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "z": (0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
+            "asset_cfg": SceneEntityCfg("box1")
+        },
+    )
+
+@configclass
+class IntegratorEventsCfg:
+    # reset
+    reset_base = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-3, -3), "y": (3, 3), "yaw": (-0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0.0, 0.0)},
+        },
+    )
+
+    reset_box0 = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "z": (0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
+            "asset_cfg": SceneEntityCfg("box0")
+        },
+    )
+
+@configclass
+class CarEventsCfg:
+    """Configuration for events."""
+
+    # reset
+    reset_base = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-5, -5), "y": (-5, -5), "yaw": (-0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0.0, 0.0)},
+        },
+    )
+
+    reset_box0 = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-1.25, -1.25), "y": (-1.25, -1.25), "z": (0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
+            "asset_cfg": SceneEntityCfg("box0")
+        },
+    )
+
+    reset_box1 = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-2.75, -2.75), "y": (-2.75, -2.75), "z": (0.0, 0.0)},
+            "velocity_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0)},
+            "asset_cfg": SceneEntityCfg("box1")
         },
     )
 
@@ -178,15 +291,15 @@ class TerminationsCfg:
 ##
 
 @configclass
-class PICEnvCfg(RLTaskEnvCfg):
+class UnicycleEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
-    viewer: ViewerCfg = ViewerCfg(eye=(7.5, -7.5, 7.5), origin_type="world") # side
+    scene: UnicycleSceneCfg = UnicycleSceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
+    viewer: ViewerCfg = ViewerCfg(eye=(0, -10, 10), origin_type="world") # side
     #viewer: ViewerCfg = ViewerCfg(eye=(0.0, 0.0, 20.0), origin_type="world") # top down
     # MDP settings
-    events: EventsCfg = EventsCfg()
+    events: UnicycleEventsCfg = UnicycleEventsCfg()
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
     commands: CommandsCfg = CommandsCfg()
@@ -203,3 +316,16 @@ class PICEnvCfg(RLTaskEnvCfg):
         self.sim.dt = 0.002
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
+
+@configclass
+class IntegratorEnvCfg(UnicycleEnvCfg):
+    scene: IntegratorSceneCfg = IntegratorSceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
+    # MDP settings
+    events: IntegratorEventsCfg = IntegratorEventsCfg()
+    observations: IntegratorObservationsCfg = IntegratorObservationsCfg()
+    
+@configclass
+class CarEnvCfg(UnicycleEnvCfg):
+    scene: CarSceneCfg = CarSceneCfg(num_envs=1, env_spacing=5.0, replicate_physics=True)
+    # MDP settings
+    events: CarEventsCfg = CarEventsCfg()

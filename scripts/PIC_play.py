@@ -24,14 +24,8 @@ parser.add_argument("--plot", action="store_true", default=False, help="Enable p
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 
-# load cheaper kit config in headless
-#if args_cli.headless:
-#    app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.gym.headless.kit"
-#else:
-#    app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
-
 # launch omniverse app
-app_launcher = AppLauncher(args_cli)#, experience=app_experience)
+app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 """Rest everything follows."""
@@ -64,12 +58,25 @@ def PDcontroller(state, obs, device, P_vel=1, P_theta=1):
     pose_d, _, theta_d = state[:, :2, 0], state[:, 2, 0], state[:, 3, 0]
     pose_diff = pose_d - obs[:, :2]
     theta_d = torch.arctan2(pose_diff[:, 1], pose_diff[:, 0])
-    theta_err = wrap_to_pi(theta_d - obs[:, 3])
+    #theta_err = wrap_to_pi(theta_d - obs[:, 3])
+    theta_err = theta_d - obs[:, 3]
     return torch.tensor([
         P_vel * pose_diff[:, 0] * torch.cos(theta_d),
         P_vel * pose_diff[:, 1] * torch.sin(theta_d),
         P_theta * theta_err
         ], device=device).view(-1, 3)
+
+def PDcontrollerIntegrator(state, obs, device, P_vel=1, P_theta=1):
+    pose_d, _, theta_d = state[:, :2, 0], state[:, 2, 0], state[:, 3, 0]
+    pose_diff = pose_d - obs[:, :2]
+    theta_d = torch.arctan2(pose_diff[:, 1], pose_diff[:, 0])
+    theta_err = wrap_to_pi(theta_d - obs[:, 3])
+    return torch.tensor([
+        P_vel * pose_diff[:, 0], #* torch.cos(theta_d),
+        P_vel * pose_diff[:, 1], #* torch.sin(theta_d),
+        P_theta * theta_err
+        ], device=device).view(-1, 3)
+
 
 def main():
     """Train with RSL-RL agent."""
@@ -113,13 +120,24 @@ def main():
     step = 0
 
     # obtain the policy for inference
-    obs[0, :2] = 5
+    obs[0, :2] = -4
+    #obs[0, 0] = -3
+    #obs[0, 1] = 3
+
     traj_pts = obs[:, :3].clone()
     dt = 0.1
     decimation = int(dt / env.unwrapped.step_dt)
     T = args_cli.video_length * dt / decimation
-    box_radius = 0.5/2 + 0.4 #c-space
-    policy = orbit.hcrl.tasks.navigation.pic.PathIntegralController(obs, dt, T, num_samples=10_000, box_radius=box_radius, device=env.unwrapped.device)
+    viz_frac = 1
+    #box_radius = 0.5/2 + 0.4 #c-space
+    box_radii = [[0.5, 0.75],[1.0, 0.75]]
+    #box_radii = [[1.0, 1.0]]
+    #box_radii = [[0.75, 0.75], [0.75, 0.75]]
+    policy = orbit.hcrl.tasks.navigation.pic.PathIntegralController(
+        obs, dt, T, num_samples=10_000, border_radius=5.0,
+        box_radius=box_radii, c_space_offset=0.2, 
+        model="unicycle", device=env.unwrapped.device
+    )
 
     cfg = VisualizationMarkersCfg(
         prim_path="/World/Visuals/testMarkers",
@@ -165,32 +183,39 @@ def main():
         with torch.inference_mode():
             # agent stepping
             state, _, samples = policy(obs)
+
+            if state.size(1) < 4:
+                state = torch.cat((state, torch.zeros(1, 4 - state.size(1), 1, device=env.unwrapped.device)), dim=1)
             # visualize samples
-            sample_pts = samples[:, ::100, :3, 0] #sample every 100th trajectory
+            #sample_pts = samples[-1:, ::viz_frac, :3, 0] #sample every 100th trajectory
+            sample_pts = samples[-1:, ::viz_frac, :3, 0] #sample every 100th trajectory
             sample_pts = sample_pts.flatten(0, 1)
+            if sample_pts.size(1) < 3:
+                sample_pts = torch.cat((sample_pts, torch.zeros(sample_pts.size(0), 1, device=env.unwrapped.device)), dim=1)
             #print(sample_pts.size())
             traj_pts = torch.cat((traj_pts, obs[:, :3]), dim=0)
             #pts = torch.cat((sample_pts, traj_pts, state[:, :3, 0]), dim=0)
             pts = torch.cat((sample_pts, traj_pts), dim=0)
-            pts[:, 2] = 0.2
+            pts[:, 2] = 0.3
             marker_indices = [0] * sample_pts.size(0) + [1] * traj_pts.size(0)# + [2] * 1
             # env stepping
             print("state ",state)
             for _ in range(decimation):
-                action = PDcontroller(state, obs, env.unwrapped.device, P_vel=5, P_theta=10)
-                collision_flag = policy.check_collision(obs, state[:, 0, :], state[:, 1, :], collision_flag=1.0)
-                if collision_flag < 0.9:
-                    print("collision")
-                    assert False
+                action = PDcontroller(state, obs, env.unwrapped.device, P_vel=1, P_theta=1) #10
+                #action = PDcontrollerIntegrator(state, obs, env.unwrapped.device, P_vel=1, P_theta=1)
                 obs, _, _, _ = env.step(action)
+                #print("obs ",obs[0, :2])
                 marker.visualize(translations=pts, marker_indices=marker_indices)
                 env.unwrapped.render()
                 step += 1
+            collision_flag = policy.check_collision(obs, state[:, 0, :], state[:, 1, :], collision_flag=1.0)
+            if collision_flag < 0.9:
+                print("collision")
+                break
             if step+1 >= args_cli.video_length: break
             if env.unwrapped.sim.is_stopped(): break
-            print("obs ",obs)
-            print()
-    print("Step {}/{}...".format(args_cli.video_length, args_cli.video_length))
+            #if collision_flag < 0.9: break
+    print("Step {}/{}...".format(step, args_cli.video_length))
         
     # close the simulator
     env.close()
