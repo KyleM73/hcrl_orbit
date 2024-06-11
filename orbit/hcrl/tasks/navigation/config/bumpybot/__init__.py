@@ -26,33 +26,3 @@ gym.register(
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.BumpybotFlatPPORunnerCfg,
         },
 )
-
-gym.register(
-    id="Bumpybot-PIC-Unicycle-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": PIC_env_cfg.UnicycleEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.BumpybotFlatPPORunnerCfg,
-        },
-)
-
-gym.register(
-    id="Bumpybot-PIC-Integrator-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": PIC_env_cfg.IntegratorEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.BumpybotFlatPPORunnerCfg,
-        },
-)
-
-gym.register(
-    id="Bumpybot-PIC-Car-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": PIC_env_cfg.CarEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.BumpybotFlatPPORunnerCfg,
-        },
-)
