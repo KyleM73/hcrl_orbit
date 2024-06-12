@@ -3,12 +3,12 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING
 
-import omni.isaac.orbit.utils.math as math_utils
-from omni.isaac.orbit.assets import Articulation, RigidObject
-from omni.isaac.orbit.managers import SceneEntityCfg
+import omni.isaac.lab.utils.math as math_utils
+from omni.isaac.lab.assets import Articulation, RigidObject
+from omni.isaac.lab.managers import SceneEntityCfg
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import BaseEnv
+    from omni.isaac.lab.envs import BaseEnv
 
 def root_pos_w(env: BaseEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Body position in the world frame."""

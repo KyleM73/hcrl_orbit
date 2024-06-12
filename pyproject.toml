@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 version = "0.0.1"
-name = "orbit.hcrl"
+name = "isaac.lab.hcrl"
 description = "Extension containing suite of HCRL environments for robot learning."
 readme = "docs/README.md"
 keywords = ["robotics", "rl", "il", "learning"]
@@ -20,4 +20,4 @@ maintainers = [
 ]
 
 [tool.setuptools]
-py-modules = ['orbit']
+py-modules = ['IsaacLab']

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit_tasks.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
-#import omni.isaac.orbit_tasks.locomotion.velocity.mdp as mdp
-#import hcrl_orbit.tasks.locomotion.mdp as hcrl_mdp
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab_tasks.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
+#import omni.isaac.lab_tasks.locomotion.velocity.mdp as mdp
 
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import GO1_CFG # isort: skip
+from isaac.lab.hcrl.assets import GO1_CFG # isort: skip
 
 @configclass
 class Go1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):

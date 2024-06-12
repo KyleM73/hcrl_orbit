@@ -6,13 +6,13 @@ from dataclasses import MISSING
 
 import carb
 
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit.managers.action_manager import ActionTerm, ActionTermCfg
-from omni.isaac.orbit.assets.articulation import Articulation
-from omni.isaac.orbit.utils.math import euler_xyz_from_quat
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab.managers.action_manager import ActionTerm, ActionTermCfg
+from omni.isaac.lab.assets.articulation import Articulation
+from omni.isaac.lab.utils.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import BaseEnv
+    from omni.isaac.lab.envs import BaseEnv
 
 class HolonomicAction(ActionTerm):
     r"""Holonomic action that maps a three dimensional action to the velocity of the robot in

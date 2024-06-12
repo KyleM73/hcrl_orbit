@@ -4,21 +4,21 @@ from dataclasses import MISSING
 import torch
 from typing import TYPE_CHECKING, Sequence
 
-import omni.isaac.orbit.sim as sim_utils
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit.managers import CommandTermCfg
-from omni.isaac.orbit.assets import Articulation
-from omni.isaac.orbit.managers import CommandTerm
-from omni.isaac.orbit.markers import VisualizationMarkers, VisualizationMarkersCfg
-from omni.isaac.orbit.markers.config import CUBOID_MARKER_CFG, BLUE_ARROW_X_MARKER_CFG, GREEN_ARROW_X_MARKER_CFG
-from omni.isaac.orbit.utils.math import (
+import omni.isaac.lab.sim as sim_utils
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab.managers import CommandTermCfg
+from omni.isaac.lab.assets import Articulation
+from omni.isaac.lab.managers import CommandTerm
+from omni.isaac.lab.markers import VisualizationMarkers, VisualizationMarkersCfg
+from omni.isaac.lab.markers.config import CUBOID_MARKER_CFG, BLUE_ARROW_X_MARKER_CFG, GREEN_ARROW_X_MARKER_CFG
+from omni.isaac.lab.utils.math import (
     quat_rotate_inverse, wrap_to_pi, yaw_quat,
     quat_from_euler_xyz, euler_xyz_from_quat,
     quat_apply_yaw,
 )
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import BaseEnv
+    from omni.isaac.lab.envs import BaseEnv
 
 class TrajectoryCommand(CommandTerm):
     """Command generator that generates position commands based on box constraints.

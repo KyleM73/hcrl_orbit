@@ -3,29 +3,29 @@ from __future__ import annotations
 import math
 from dataclasses import MISSING
 
-import omni.isaac.orbit.sim as sim_utils
-from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg
-from omni.isaac.orbit.envs import RLTaskEnvCfg, ViewerCfg
-from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
-from omni.isaac.orbit.managers import ObservationGroupCfg as ObsGroup
-from omni.isaac.orbit.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.orbit.managers import EventTermCfg as EventTerm
-from omni.isaac.orbit.managers import RewardTermCfg as RewTerm
-from omni.isaac.orbit.managers import SceneEntityCfg
-from omni.isaac.orbit.managers import TerminationTermCfg as DoneTerm
-from omni.isaac.orbit.scene import InteractiveSceneCfg
-from omni.isaac.orbit.sensors import ContactSensorCfg, RayCasterCfg, patterns
-from omni.isaac.orbit.terrains import TerrainImporterCfg
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
+import omni.isaac.lab.sim as sim_utils
+from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg
+from omni.isaac.lab.envs import RLTaskEnvCfg, ViewerCfg
+from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
+from omni.isaac.lab.managers import ObservationGroupCfg as ObsGroup
+from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
+from omni.isaac.lab.managers import EventTermCfg as EventTerm
+from omni.isaac.lab.managers import RewardTermCfg as RewTerm
+from omni.isaac.lab.managers import SceneEntityCfg
+from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
+from omni.isaac.lab.scene import InteractiveSceneCfg
+from omni.isaac.lab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from omni.isaac.lab.terrains import TerrainImporterCfg
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-import omni.isaac.orbit.envs.mdp as mdp
-import orbit.hcrl.tasks.navigation.mdp as hcrl_mdp
+import omni.isaac.lab.envs.mdp as mdp
+import isaac.lab.hcrl.tasks.navigation.mdp as hcrl_mdp
 
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import BUMPYBOT_CFG, GO1_CFG, CUBE_CFG, HOSPITAL_CFG  # isort: skip
+from isaac.lab.hcrl.assets import BUMPYBOT_CFG, GO1_CFG, CUBE_CFG, HOSPITAL_CFG  # isort: skip
 from .navigation_env_cfg import LocomotionNavigationFlatEnvCfg
 
 ##

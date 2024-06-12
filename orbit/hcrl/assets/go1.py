@@ -11,11 +11,11 @@ Reference: https://github.com/Improbable-AI/walk-these-ways/tree/master/resource
 from __future__ import annotations
 import os
 
-import omni.isaac.orbit.sim as sim_utils
-from omni.isaac.orbit.actuators import IdealPDActuatorCfg, DCMotorCfg
-from omni.isaac.orbit.assets.articulation import ArticulationCfg
+import omni.isaac.lab.sim as sim_utils
+from omni.isaac.lab.actuators import IdealPDActuatorCfg, DCMotorCfg
+from omni.isaac.lab.assets.articulation import ArticulationCfg
 
-from orbit.hcrl import EXT_DIR
+from isaac.lab.hcrl import EXT_DIR
 
 ##
 # Configuration

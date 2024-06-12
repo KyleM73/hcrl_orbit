@@ -18,4 +18,4 @@ __version__ = EXT_METADATA["package"]["version"]
 # Register Gym environments.
 ##
 
-import orbit.hcrl.tasks # noqa: F401
+import isaac.lab.hcrl.tasks # noqa: F401

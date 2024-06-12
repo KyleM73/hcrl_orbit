@@ -10,11 +10,11 @@ Reference: TODO add link to urdf etc.
 from __future__ import annotations
 import os
 
-import omni.isaac.orbit.sim as sim_utils
-from omni.isaac.orbit.actuators import IdealPDActuatorCfg, ImplicitActuatorCfg
-from omni.isaac.orbit.assets import ArticulationCfg, RigidObjectCfg
+import omni.isaac.lab.sim as sim_utils
+from omni.isaac.lab.actuators import IdealPDActuatorCfg, ImplicitActuatorCfg
+from omni.isaac.lab.assets import ArticulationCfg, RigidObjectCfg
 
-from orbit.hcrl import EXT_DIR
+from isaac.lab.hcrl import EXT_DIR
 
 ##
 # Configuration

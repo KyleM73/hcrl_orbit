@@ -7,13 +7,13 @@ from dataclasses import MISSING
 
 import carb
 
-from omni.isaac.orbit.utils import configclass
-import omni.isaac.orbit.utils.string as string_utils
-from omni.isaac.orbit.assets.articulation import Articulation
-from omni.isaac.orbit.managers.action_manager import ActionTerm, ActionTermCfg
+from omni.isaac.lab.utils import configclass
+import omni.isaac.lab.utils.string as string_utils
+from omni.isaac.lab.assets.articulation import Articulation
+from omni.isaac.lab.managers.action_manager import ActionTerm, ActionTermCfg
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import BaseEnv
+    from omni.isaac.lab.envs import BaseEnv
 
 class WBCJointAction(ActionTerm):
     cfg: WBCJointActionCfg

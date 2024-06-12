@@ -3,13 +3,13 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING, Any
 
-from omni.isaac.orbit.sensors import ContactSensor
-import omni.isaac.orbit.utils.math as math_utils
-from omni.isaac.orbit.assets import Articulation
-from omni.isaac.orbit.managers import ManagerTermBase, RewardTermCfg, SceneEntityCfg
+from omni.isaac.lab.sensors import ContactSensor
+import omni.isaac.lab.utils.math as math_utils
+from omni.isaac.lab.assets import Articulation
+from omni.isaac.lab.managers import ManagerTermBase, RewardTermCfg, SceneEntityCfg
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import RLTaskEnv
+    from omni.isaac.lab.envs import RLTaskEnv
 
 def pose_tracking_exp_l2(env: RLTaskEnv, command_name: str, std: float = 1.0) -> torch.Tensor:
     """

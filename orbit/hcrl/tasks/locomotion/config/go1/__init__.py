@@ -8,7 +8,7 @@ from . import agents, go1_flat_env_cfg, go1_rough_env_cfg
 
 gym.register(
     id="Go1-Flat-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": go1_flat_env_cfg.Go1FlatEnvCfg,
@@ -18,7 +18,7 @@ gym.register(
 
 gym.register(
     id="Go1-Flat-Play-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": go1_flat_env_cfg.Go1FlatEnvCfg_PLAY,
@@ -28,7 +28,7 @@ gym.register(
 
 gym.register(
     id="Go1-Rough-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": go1_rough_env_cfg.Go1RoughEnvCfg,
@@ -38,7 +38,7 @@ gym.register(
 
 gym.register(
     id="Go1-Rough-Play-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": go1_rough_env_cfg.Go1RoughEnvCfg_PLAY,

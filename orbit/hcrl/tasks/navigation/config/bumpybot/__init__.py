@@ -1,7 +1,6 @@
 import gymnasium as gym
 
-#from hcrl_orbit.locomotion.velocity.config.draco import agents, flat_env_cfg, rough_env_cfg
-from . import agents, flat_env_cfg, PIC_env_cfg
+from . import agents, flat_env_cfg
 
 ##
 # Register Gym environments.
@@ -9,7 +8,7 @@ from . import agents, flat_env_cfg, PIC_env_cfg
 
 gym.register(
     id="Bumpybot-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": flat_env_cfg.BumpybotFlatEnvCfg,
@@ -19,7 +18,7 @@ gym.register(
 
 gym.register(
     id="Bumpybot-Play-v0",
-    entry_point="omni.isaac.orbit.envs:RLTaskEnv",
+    entry_point="omni.isaac.lab.envs:RLTaskEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": flat_env_cfg.BumpybotFlatEnvCfg_PLAY,

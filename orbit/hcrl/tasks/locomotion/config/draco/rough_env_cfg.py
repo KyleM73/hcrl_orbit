@@ -1,10 +1,10 @@
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit_tasks.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab_tasks.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
 
 ##
 # Pre-defined configs
 ##
-from orbit.hcrl.assets import DRACO_CFG  # isort: skip
+from isaac.lab.hcrl.assets import DRACO_CFG  # isort: skip
 
 
 @configclass

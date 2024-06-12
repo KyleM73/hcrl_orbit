@@ -4,8 +4,8 @@ import torch
 from collections.abc import Sequence
 from dataclasses import MISSING
 
-from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit.utils.math import apply_delta_pose, compute_pose_error
+from omni.isaac.lab.utils import configclass
+from omni.isaac.lab.utils.math import apply_delta_pose, compute_pose_error
 
 
 @configclass

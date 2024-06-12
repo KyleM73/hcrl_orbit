@@ -3,10 +3,10 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING
 
-from omni.isaac.orbit.assets import Articulation
+from omni.isaac.lab.assets import Articulation
 
 if TYPE_CHECKING:
-    from omni.isaac.orbit.envs import RLTaskEnv
+    from omni.isaac.lab.envs import RLTaskEnv
 
 """
 MDP terminations.

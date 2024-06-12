@@ -4,15 +4,15 @@
 version = "0.0.1"
 
 # Description
-title = "HCRL ORBIT Environments"
+title = "HCRL IsaacLab Environments"
 description = "Extension containing suite of HCRL environments for robot learning."
 readme = "README.md"
-repository = "https://github.com/KyleM73/hcrl_orbit.git"
+repository = "https://github.com/KyleM73/isaac.lab.hcrl.git"
 category = "robotics"
 keywords = ["robotics", "rl", "il", "learning"]
 
 [dependencies]
-"omni.isaac.orbit" = {}
+"omni.isaac.isaac.lab" = {}
 
 [[python.module]]
-name = "orbit.hcrl"
+name = "isaac.lab.hcrl"
